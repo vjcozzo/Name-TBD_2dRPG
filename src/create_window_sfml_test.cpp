@@ -1,3 +1,6 @@
+/* Note: raw code has been taken from SFML tutorial 	   */
+/* as verification that SFML has been installed correctly. */
+
 #include <SFML/Graphics.hpp>
 
 int main()
