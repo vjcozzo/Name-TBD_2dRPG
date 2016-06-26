@@ -1,11 +1,12 @@
 //
-// Created by Ryan on 6/9/2016.
+// Base code reated by Ryan on 6/9/2016.
 //
-/* Edited by Vince  (12 June '16) */
+/* Edited by Vince  (12-9 June '16) */
 
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
+#include <assert.h>
 
 static float get_magnitude (sf::Vector2<float> vect);
 
@@ -87,12 +88,17 @@ int main (void) {
 
 	/* Normalize the vector, set a constant magnitude */
 	float mag = get_magnitude (player_vel);
+	if (mag <= 0) {
+	    printf ("YO --- magnitude not positive. Jumping out of function now.\n");
+	    return -1;
+	}
 	player_vel.x /= mag;
 	player_vel.y /= mag;
 	player_vel *= 0.00001f/* dt*/;
 
 	shape.move (player_vel.x, player_vel.y);
 	if (ind % 10000 == 0) {
+	    printf ("Current position: <%f, %f>\n", shape.getPosition().x, shape.getPosition().y);
 	    printf ("Current velocity: <%f, %f> or %f\n", player_vel.x, player_vel.y, mag);
 	}
         window.draw(shape);
