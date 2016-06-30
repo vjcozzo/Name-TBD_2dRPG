@@ -8,7 +8,7 @@
 #include <SFML/Window.hpp>
 #include <assert.h>
 
-static float get_magnitude (sf::Vector2<float> vect);
+/*static float get_magnitude (sf::Vector2<float> vect);*/
 
 int main (void) {
     int ind = 0;
@@ -70,48 +70,49 @@ int main (void) {
 
         window.clear();
         if (shape.getPosition().x > 182) {
-	    player_vel.x = (-1)*player_vel.x;
-/*            shape.move(-200, 0);	*/
+	        player_vel.x = (-1)*player_vel.x;
+/*          shape.move(-200, 0);	*/
         }
         if (shape.getPosition().y > 182) {
-	    player_vel.y = (-1)*player_vel.y;
-/*            shape.move(0, -200);	*/
+	        player_vel.y = (-1)*player_vel.y;
+/*          shape.move(0, -200);	*/
         }
         if (shape.getPosition().x < 0) {
-	    player_vel.x = (-1)*player_vel.x;
-/*            shape.move(200, 0);	*/
+	        player_vel.x = (-1)*player_vel.x;
+/*          shape.move(200, 0);	*/
         }
         if (shape.getPosition().y < 0) {
-	    player_vel.y = (-1)*player_vel.y;
-/*            shape.move(0, 200);	*/
+	        player_vel.y = (-1)*player_vel.y;
+/*          shape.move(0, 200);	*/
         }
+    
+	    /* Normalize the vector, set a constant magnitude */
+	    /*float mag = get_magnitude (player_vel);*/
+	    
+        /*if (mag <= 0) {
+	        printf ("YO --- magnitude not positive. Jumping out of function now.\n");
+	        return -1;
+	    }*/
+	    /*player_vel.x /= mag;
+	    player_vel.y /= mag;
+	    player_vel *= 0.00000001f;*/
 
-	/* Normalize the vector, set a constant magnitude */
-	float mag = get_magnitude (player_vel);
-	if (mag <= 0) {
-	    printf ("YO --- magnitude not positive. Jumping out of function now.\n");
-	    return -1;
-	}
-	player_vel.x /= mag;
-	player_vel.y /= mag;
-	player_vel *= 0.00001f/* dt*/;
-
-	shape.move (player_vel.x, player_vel.y);
-	if (ind % 10000 == 0) {
-	    printf ("Current position: <%f, %f>\n", shape.getPosition().x, shape.getPosition().y);
-	    printf ("Current velocity: <%f, %f> or %f\n", player_vel.x, player_vel.y, mag);
-	}
+	    shape.move (player_vel.x, player_vel.y);
+	    /*if (ind % 10000 == 0) {
+	        printf ("Current position: <%f, %f>\n", shape.getPosition().x, shape.getPosition().y);
+	        printf ("Current velocity: <%f, %f> or %f\n", player_vel.x, player_vel.y, mag);
+	    }*/
         window.draw(shape);
         window.display();
-	ind ++;
+	    ind ++;
     }
 
     return 0;
 }
 
-static float get_magnitude (sf::Vector2<float> vect) {
+/*static float get_magnitude (sf::Vector2<float> vect) {
     float result;
 
     result = (vect.x * vect.x) + (vect.y * vect.y);
     return result;
-}
+}*/
