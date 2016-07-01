@@ -1,5 +1,6 @@
 
 add_executable(TBD main.cpp)
+add_executable(bounce_ball bounce_ball.cpp)
 
 
 find_package(SFML 2 REQUIRED system window graphics network audio)
