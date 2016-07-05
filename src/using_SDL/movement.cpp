@@ -13,7 +13,7 @@ const int HEIGHT = 365;
 static void logSDLError (std::ostream &os, const std::string &message);
 static SDL_Texture *loadTextureFromPNG (const std::string &file, SDL_Renderer *ren);
 static void renderTexture (SDL_Texture *texture, SDL_Renderer *ren, int x, int y);
-static void renderTextureDouble (SDL_Texture *texture, SDL_Renderer *ren, int x, int y);
+static void renderTextureFactor (SDL_Texture *texture, SDL_Renderer *ren, int x, int y, float fact);
 
 int main (int argc, char** argv) {
 	if (SDL_Init(SDL_INIT_VIDEO)) {
@@ -39,7 +39,7 @@ int main (int argc, char** argv) {
 	const std::string path = "/home/vjcozzo/Name-TBD/game_art/";
 
 	SDL_Texture *bgTex = loadTextureFromPNG (path + "plains_fort.png"/*"woods.png*/, ren);
-	SDL_Texture *playerTex = loadTextureFromPNG (path + "player.png", ren);
+	SDL_Texture *playerTex = loadTextureFromPNG (path + "player_transparent.png", ren);
 
 	if ((bgTex == NULL) || (playerTex == NULL)) {
 		SDL_DestroyRenderer (ren);
@@ -52,8 +52,10 @@ int main (int argc, char** argv) {
 	/* Obviously they will be changed later on and will change where
 	 * the player object entity is renderred. */
 	int playerX = 100, playerY = 300;
+	int speed = 2;
 	SDL_Event ev;
 	int alive = 1/*, iteration = 0*/;
+	float scale = 2.0f;
 	while (alive) {
 		while (SDL_PollEvent (&ev)) {
 			/* Polled an event for this iteration. */
@@ -64,24 +66,30 @@ int main (int argc, char** argv) {
 			else if (ev.type == SDL_KEYDOWN) {
 			/* Process the WASD key presses: */
 				if (ev.key.keysym.sym == SDLK_d) {
-					playerX += 2;
+					if ((playerX < 333) || (playerX > 333 && playerY > 269)) {
+						playerX += speed;
+					}
 				} else if (ev.key.keysym.sym == SDLK_a) {
-					playerX -= 2;
+					if ((playerX > 1)) {
+						playerX -= speed;
+					}
 				}
 				if (ev.key.keysym.sym == SDLK_w) {
 				/* Could uncomment the following given the woods background, but the woods are still being drawn: */
 /*
 					if (playerY > 270) {
-						playerY -= 2;
+						playerY -= speed;
 					}
 */
-					if (playerY > 285) {
-						playerY -= 2;
+					if (playerY > 271) {
+						playerY -= speed;
+					} else if (playerX < 373 && playerY > 201) {
+						playerY -= speed;
 					}
 				} else if (ev.key.keysym.sym == SDLK_s) {
 /*
 					if (playerY < HEIGHT - 30) {
-						playerY += 2;
+						playerY += speed;
 					}
 */
 					if (playerY < 305) {
@@ -92,13 +100,16 @@ int main (int argc, char** argv) {
 					alive = 0;
 				}
 			/* Allow player to loop around in the x axis direction*/
+/*				if (playerX < 0) {
+					playerX += WIDTH;
+				}  */
 				playerX %= WIDTH;
 			}
 
 		}
 		SDL_RenderClear (ren);
 		renderTexture (bgTex, ren, 0, 0);
-		renderTextureDouble (playerTex, ren, playerX, playerY);
+		renderTextureFactor (playerTex, ren, playerX, playerY, scale);
 
 		SDL_RenderPresent (ren);
 	/* EDIT: No longer want to pause for so long in each iteration!
@@ -152,13 +163,13 @@ static void renderTexture (SDL_Texture *texture, SDL_Renderer *ren, int x, int y
 	SDL_RenderCopy (ren, texture, NULL, &destination);
 }
 
-static void renderTextureDouble (SDL_Texture *texture, SDL_Renderer *ren, int x, int y) {
+static void renderTextureFactor (SDL_Texture *texture, SDL_Renderer *ren, int x, int y, float fact) {
 	SDL_Rect destination;
 	destination.x = x;
 	destination.y = y;
 
 	SDL_QueryTexture (texture, NULL, NULL, &destination.w, &destination.h);
-	destination.w *= 2;
-	destination.h *= 2;
+	destination.w *= fact;
+	destination.h *= fact;
 	SDL_RenderCopy (ren, texture, NULL, &destination);
 }
