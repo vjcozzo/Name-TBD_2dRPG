@@ -2,9 +2,11 @@
 
 #####################################
 # vjcozzo personal gitignore files:
+# (Let me know if you change any of these)
 #####################################
 *.sh
 src/Makefile
+src/using_SDL/Makefile
 
 #################
 ## Clion
