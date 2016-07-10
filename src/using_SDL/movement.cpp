@@ -36,12 +36,14 @@ int main (int argc, char** argv) {
 		return 1;
 	}
 
-	const std::string path = "/home/vjcozzo/Name-TBD/game_art/";
+	const std::string path = "/home/vjcozzo/Name-TBD/res/";
+	const std::string bg = "plains_fort.png";
 
-	SDL_Texture *bgTex = loadTextureFromPNG (path + "plains_fort.png"/*"woods.png*/, ren);
+	SDL_Texture *bgTex = loadTextureFromPNG (path + "" + bg/*.png*/, ren);
 	SDL_Texture *playerTex = loadTextureFromPNG (path + "player_transparent.png", ren);
+	SDL_Texture *health_bar_base = loadTextureFromPNG (path + "health_base.png", ren);
 
-	if ((bgTex == NULL) || (playerTex == NULL)) {
+	if ((bgTex == NULL) || (playerTex == NULL) || health_bar_base == NULL) {
 		SDL_DestroyRenderer (ren);
 		SDL_DestroyWindow (win);
 		SDL_Quit();
@@ -51,11 +53,19 @@ int main (int argc, char** argv) {
 	/* These are variables to store the player's initial position */
 	/* Obviously they will be changed later on and will change where
 	 * the player object entity is renderred. */
-	int playerX = 100, playerY = 300;
+	int playerX = 100, playerY = 300, winstate = 0;
 	int speed = 2;
 	SDL_Event ev;
 	int alive = 1/*, iteration = 0*/;
 	float scale = 2.0f;
+
+	/* Next, determine winstate */
+	if (strcmp (bg.c_str(), "plains_fort.png") == 0) {
+		winstate = 12;
+	}
+	else if (strcmp (bg.c_str(), "woods_rev2.png") == 0) {
+		winstate = 13;
+	}
 	while (alive) {
 		while (SDL_PollEvent (&ev)) {
 			/* Polled an event for this iteration. */
@@ -65,50 +75,52 @@ int main (int argc, char** argv) {
 			}
 			else if (ev.type == SDL_KEYDOWN) {
 			/* Process the WASD key presses: */
-				if (ev.key.keysym.sym == SDLK_d) {
-					if ((playerX < 333) || (playerX > 333 && playerY > 269)) {
-						playerX += speed;
+				if (winstate == 12) {
+					if (ev.key.keysym.sym == SDLK_d) {
+						if ((playerX < 333) || (playerX > 333 && playerY > 269)) {
+							playerX += speed;
+						}
+					} else if (ev.key.keysym.sym == SDLK_a) {
+						if ((playerX > 1)) {
+							playerX -= speed;
+						}
 					}
-				} else if (ev.key.keysym.sym == SDLK_a) {
-					if ((playerX > 1)) {
-						playerX -= speed;
-					}
-				}
-				if (ev.key.keysym.sym == SDLK_w) {
-				/* Could uncomment the following given the woods background, but the woods are still being drawn: */
+					if (ev.key.keysym.sym == SDLK_w) {
+/* Could uncomment the following given the woods background, but the woods are still being drawn: */
 /*
 					if (playerY > 270) {
 						playerY -= speed;
 					}
 */
-					if (playerY > 271) {
-						playerY -= speed;
-					} else if (playerX < 373 && playerY > 201) {
-						playerY -= speed;
-					}
-				} else if (ev.key.keysym.sym == SDLK_s) {
+						if (playerY > 271) {
+							playerY -= speed;
+						} else if ((playerX < 373) && (playerY > 201)) {
+							playerY -= speed;
+						}
+					} else if (ev.key.keysym.sym == SDLK_s) {
 /*
 					if (playerY < HEIGHT - 30) {
 						playerY += speed;
 					}
 */
-					if (playerY < 305) {
-						playerY += 2;
-					}
-				} else if (ev.key.keysym.sym == SDLK_x) {
+						if (playerY < 305) {
+							playerY += 2;
+						}
+					} else if (ev.key.keysym.sym == SDLK_x) {
 			/* Allow exit on X key: */
-					alive = 0;
-				}
+						alive = 0;
+					}
 			/* Allow player to loop around in the x axis direction*/
 /*				if (playerX < 0) {
 					playerX += WIDTH;
 				}  */
-				playerX %= WIDTH;
+					playerX %= WIDTH;
+				}
 			}
-
 		}
 		SDL_RenderClear (ren);
 		renderTexture (bgTex, ren, 0, 0);
+		renderTexture (health_bar_base, ren, 5, 5);
 		renderTextureFactor (playerTex, ren, playerX, playerY, scale);
 
 		SDL_RenderPresent (ren);
@@ -125,6 +137,7 @@ int main (int argc, char** argv) {
 
 	SDL_DestroyTexture (bgTex);
 	SDL_DestroyTexture (playerTex);
+	SDL_DestroyTexture (health_bar_base);
 	SDL_DestroyRenderer (ren);
 	SDL_DestroyWindow (win);
 	SDL_Quit();
