@@ -1,17 +1,9 @@
-cmake_minimum_required(VERSION 2.8.0) # Min version cmake required
-Project(Hello)	# Define project
+cmake_minimum_required(VERSION 3.5.2)
+project(NotCrosscavern)
+set(NotCrosscavern_VERSION_MAJOR 0)
+set(NotCrosscavern_VERSION_MINOR 0)
 
-# Flag the compiler to use c++11 if possible
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-# Set the build directory
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
-# Set the module path
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
-
-# Set the include directory
-include_directories("${CMAKE_SOURCE_DIR}/include")
-
-#Go to CMakeLists in src
-add_subdirectory(src)
+add_executable(using_SDL_movement src/using_SDL/movement.cpp)
+add_executable(using_SDL_test src/using_SDL/test.cpp)
