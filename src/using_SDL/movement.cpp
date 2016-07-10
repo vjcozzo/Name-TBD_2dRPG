@@ -7,6 +7,11 @@
 #include <SDL2/SDL_mixer.h>
 #include <SDL2/SDL_ttf.h>
 
+/* N = Tentative max number of entities on screen at a time,	*/
+/* unless of course we take a different approach, like storing 	*/
+/* all entities ina  linked list or arraylist instead of array.	*/
+#define N 200
+
 const int WIDTH = 710;
 const int HEIGHT = 365;
 
@@ -36,14 +41,35 @@ int main (int argc, char** argv) {
 		return 1;
 	}
 
+/* We will need the following arrays,
+ *  when we generalize this entire .cpp document to make the engine: */
+/*
+	int map_matrix[WIDTH][LENGTH];
+	SDL_Texture* master_entity_list[N];
+*/
+
 	const std::string path = "/home/vjcozzo/Name-TBD/res/";
 	const std::string bg = "plains_fort.png";
 
-	SDL_Texture *bgTex = loadTextureFromPNG (path + "" + bg/*.png*/, ren);
+	SDL_Texture *bgTex = loadTextureFromPNG (path + "" + bg, ren);
 	SDL_Texture *playerTex = loadTextureFromPNG (path + "player_transparent.png", ren);
 	SDL_Texture *health_bar_base = loadTextureFromPNG (path + "health_base.png", ren);
+	SDL_Texture *building = loadTextureFromPNG (path + "building.png", ren);
+	SDL_Texture *tent = loadTextureFromPNG (path + "tent_small_blue.png", ren);
+/* How would we generalize this initialization of SDL_Textures?
+ *	Let's think about it... something like... the following?
+	for (ind = 0; ind < num_of_default_entities; ind ++) {
+		master_entity_list[ind]	= loadTextureFromPNG (path + ???);
+	}
+	
+ * On second thought, this is happening outside the main loop, so...
+ * We may just want to initialize like two or three main entities,
+ * Namely the ones that exist by default on the TITLE screen.
+ * Then update the entities inside the while loop ? - Vince
+*/
 
-	if ((bgTex == NULL) || (playerTex == NULL) || health_bar_base == NULL) {
+	if ((bgTex == NULL) || (playerTex == NULL) ||
+	    (building == NULL) || (health_bar_base == NULL) || (tent == NULL)) {
 		SDL_DestroyRenderer (ren);
 		SDL_DestroyWindow (win);
 		SDL_Quit();
@@ -54,6 +80,9 @@ int main (int argc, char** argv) {
 	/* Obviously they will be changed later on and will change where
 	 * the player object entity is renderred. */
 	int playerX = 100, playerY = 300, winstate = 0;
+
+	/* Warning: please don't make this speed variable too large, 
+		else the player might go off screen in the left direction... */
 	int speed = 2;
 	SDL_Event ev;
 	int alive = 1/*, iteration = 0*/;
@@ -121,6 +150,15 @@ int main (int argc, char** argv) {
 		SDL_RenderClear (ren);
 		renderTexture (bgTex, ren, 0, 0);
 		renderTexture (health_bar_base, ren, 5, 5);
+		renderTexture (building, ren, 367, 79);
+		renderTexture (tent, ren, 231, 263);
+/* Eventually we need a general statement, probably within a for-loop, ike: */
+/*		for (ind  = 0; ind < num_entities; num ++) {
+			int x_comp = entity[ind]->x_pos;
+			int y_comp = entity[ind]->y_pos;
+			renderTexture (entity[ind], ren, x_comp, y_comp);
+		}
+*/
 		renderTextureFactor (playerTex, ren, playerX, playerY, scale);
 
 		SDL_RenderPresent (ren);
@@ -135,9 +173,15 @@ int main (int argc, char** argv) {
 	*/
 	}
 
+	SDL_DestroyTexture (building);
 	SDL_DestroyTexture (bgTex);
 	SDL_DestroyTexture (playerTex);
 	SDL_DestroyTexture (health_bar_base);
+/* Again, here we'll need a new for-loop, something like: */
+/*	for (ind = 0; ind < num_entities; ind ++) {
+		SDL_Destroy_Texture (entity[ind]);
+	}
+*/
 	SDL_DestroyRenderer (ren);
 	SDL_DestroyWindow (win);
 	SDL_Quit();
