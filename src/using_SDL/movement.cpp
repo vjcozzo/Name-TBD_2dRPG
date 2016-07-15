@@ -9,7 +9,7 @@
 
 /* N = Tentative max number of entities on screen at a time,	*/
 /* unless of course we take a different approach, like storing 	*/
-/* all entities ina  linked list or arraylist instead of array.	*/
+/* all entities in a linked list or arraylist instead of array.	*/
 #define N 200
 
 const int WIDTH = 710;
