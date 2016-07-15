@@ -1,0 +1,2 @@
+building.png, 367, 79
+tent_small_blue.png, 231, 263

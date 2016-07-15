@@ -1,0 +1,1 @@
+plains_fort.png,100,300
