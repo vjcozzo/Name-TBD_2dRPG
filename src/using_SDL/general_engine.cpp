@@ -1,5 +1,6 @@
 /* Vincent Cozzo 						*/
-/* A test for moving the player entity around using WASD	*/
+/* A test for generalizing the movement capabilities, 		*/
+/* With the eventual goal of rendering any general background	*/
 
 #include <iostream>
 #include <SDL2/SDL.h>
@@ -16,24 +17,25 @@
 /* all entities in a linked list or arraylist instead of array.	*/
 #define N 200
 #define MAX_LEN 64
+#define WIN_HEIGHT 365
+#define WIN_WIDTH 710
 
-const int WIDTH = 710;
-const int HEIGHT = 365;
-
-static void logSDLError (std::ostream &os, const std::string &message);
-static SDL_Texture *loadTextureFromPNG (const std::string &file, SDL_Renderer *ren);
-static void renderTexture (SDL_Texture *texture, SDL_Renderer *ren, int x, int y);
-static void renderTextureFactor (SDL_Texture *texture, SDL_Renderer *ren, int x, int y, float fact);
-static const char* getBGStringFromNum (unsigned int ref_num);
 /*static int** getMapFromBG (std::string bg_name);	*/
+
+/*extern const int HEIGHT, WIDTH;			*/
 
 int main (int argc, char** argv) {
 	if (SDL_Init(SDL_INIT_VIDEO)) {
 		logSDLError (std::cout, "SDL_Init");
 		return 1;
 	}
+	if (TTF_Init()) {
+		logSDLError (std::cout, "TTF_Init");
+		SDL_Quit();
+		return 1;
+	}
 
-	SDL_Window *win = SDL_CreateWindow ("Old Crosscavern Map", 50, 50, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
+	SDL_Window *win = SDL_CreateWindow ("Old Crosscavern Map", 50, 50, WIN_WIDTH, WIN_HEIGHT, SDL_WINDOW_SHOWN);
 	if (win == NULL) {
 		logSDLError (std::cout, "SDL_CreateWindow");
 		SDL_Quit();
@@ -52,23 +54,24 @@ int main (int argc, char** argv) {
  *  when we generalize this entire .cpp document to make the engine: */
 
 	int ind, indc, num_entities = 3;
-	int map_matrix[WIDTH][HEIGHT];
-	for (ind = 0; ind < WIDTH; ind ++) {
-		for (indc = 0; indc < HEIGHT; indc ++) {
+	int map_matrix[WIN_HEIGHT][WIN_WIDTH];
+	for (ind = 0; ind < WIN_HEIGHT; ind ++) {
+		for (indc = 0; indc < WIN_WIDTH; indc ++) {
 			map_matrix[ind][indc] = 0;
 		}
 	}
 
-	entity* master_entity_list[N] = {NULL};
+	Entity* master_entity_list[N] = {NULL};
 
 /* We will need a game state and background number, for general
  *   background loading */
 	unsigned int /*game_state = 11,*/ bg_num = 99;
 
-	const std::string path = "/home/vjcozzo/Name-TBD/res/";
+	const std::string path = /*"/home/vjcozzo/Name-TBD/res/"*/"../../res/";
 	const char *data = "bg_data.txt";
 	const char *bg = getBGStringFromNum (bg_num);
 
+/*	SDL_Texture *playerLoc = loadTextureFromFont ();*/
 	SDL_Texture *bgTex = loadTextureFromPNG (path + "" + bg, ren);
 	SDL_Texture *playerTex = loadTextureFromPNG (path + "player_transparent.png", ren);
 	SDL_Texture *health_bar_base = loadTextureFromPNG (path + "health_base.png", ren);
@@ -78,18 +81,22 @@ int main (int argc, char** argv) {
 	ind = 0;
 	int found = 0;
 /* Invocation of the general solution here:
- * map_matrix = getMapFromBG (bg);
+   map_matrix = getMapFromBG (bg);
+ * or perhaps:
+   adjustMapFromBG (bg, map_matrix);
+   * or something of the sort.
  * */
 	int indr/*, indc*/;
-	for (indr = 0; indr < WIDTH; indr ++) {
-		for (indc = 0; indc < 373; indc ++) {
+	for (indr = 0; indr < 271; indr ++) {
+		for (indc = 0; indc < WIN_WIDTH; indc ++) {
 			map_matrix[indr][indc] = 1;
 		}
 	}
 	FILE *database = fopen (data, "r");
 	char whole_line[4*MAX_LEN] = {'\0'};
 	while ((!found) && fgets (whole_line, 4*MAX_LEN + 1, database)) {
-		int indc = 0, initX, initY, subtraction;
+		int initX, initY, subtraction;
+		indc = 0;
 		char pngName[MAX_LEN] = {'\0'};
 		char excludeFirst[MAX_LEN] = {'\0'};
 /*		sscanf (whole_line, "%s,%d,%d\n", pngName, &initX, &initY);*/
@@ -137,14 +144,14 @@ int main (int argc, char** argv) {
 /* This texture is redundant, since we already have a background texture initialized above. However, in a general engine, this may need to be uncommented. */
 /*			SDL_Texture *bg_texture = loadTextureFromPNG (path + "" + pngName, ren);	*/
 			FILE* specific_entities_list = fopen (pngFileName, "r");
-			ind = 0;
-			printf ("Debug msg: About to start inner while loop, to read individual entity data\n");
+			ind = 1;
+/*			printf ("Debug msg: About to start inner while loop, to read individual entity data\n");*/
 			while (fgets (whole_line, 4*MAX_LEN + 1, specific_entities_list)) {
 				char postLine[MAX_LEN] = {'\0'};
 				char nextPngName[MAX_LEN] = {'\0'};
 				int ent_initX, ent_initY;
 				indc = 0;
-				printf ("Debug msg: %s", whole_line);
+/*				printf ("Debug msg: %s", whole_line);*/
 				while (whole_line[indc] != ',') {
 					nextPngName[indc] = whole_line[indc];
 					indc ++;
@@ -159,31 +166,26 @@ int main (int argc, char** argv) {
 				}
 /*				indc = 0;*/
 				sscanf (postLine, "%d,%d", &ent_initX, &ent_initY);
-/*				printf ("ind:%d\n", ind);	*/
-/*				printf ("%s\n", nextPngName);	*/
-/*				printf ("Debug: about to allocate memory\n");*/
 				*(master_entity_list + ind) = (entity *) malloc (sizeof (entity));
-				printf ("Debug msg: The sizeof returns %lu\n", sizeof(entity));
 				if (master_entity_list[ind] == NULL) {
 					std::cout << "Nooo! Failure. COULD NOT ALLOCATE MEMORY" << std::endl;
 					return -1;
 				}
-				printf ("Debug: Successfully allocated memory\n");
+/*				printf ("Debug: Successfully allocated memory\n");*/
 				SDL_Texture *next_texture = loadTextureFromPNG (path + "" + nextPngName, ren);
-				printf ("Debug: made SDL Texture for this entity.\n");
-			       	master_entity_list[ind]->x_comp = initX;
-				master_entity_list[ind]->y_comp = initY;
-				printf ("Debug: SET THE X AND Y\n");
+/*				printf ("Debug: made SDL Texture for this entity.\n");*/
+			       	master_entity_list[ind]->x_comp = ent_initX;
+				master_entity_list[ind]->y_comp = ent_initY;
+/*				printf ("Debug: SET THE X AND Y\n");*/
 				master_entity_list[ind]->visual = next_texture;
-				printf ("Deubg: attached the texture to the dynamically allocated entity struct.\n");
-				printf ("ind:%d\n%s\nx:%d\ny:%d\n", ind, nextPngName, master_entity_list[ind]->x_comp, master_entity_list[ind]->y_comp);
 				ind ++;
 			}
 			found = 1;
 		}
 	}
 	fclose (database);
-/*	master_entity_list[0] = { playerTex, 100, 300};
+/* SO -- the array master_entity_list should now look like:
+	master_entity_list[0] = { playerTex, 100, 300};
 	master_entity_list[1] = { building, 367, 79};
 	master_entity_list[2] = { tent, 231, 263};		*/
 /* How would we generalize this initialization of SDL_Textures?
@@ -236,22 +238,22 @@ int main (int argc, char** argv) {
 			else if (ev.type == SDL_KEYDOWN) {
 /* Process the WASD key presses: */
 				if (ev.key.keysym.sym == SDLK_d) {
-					if (map_matrix[playerX + speed][playerY] == 0) {
+					if (map_matrix[playerY + speed][playerX] == 0) {
 						playerX += speed;
 /* In the future...? Would it be:
  * 						master_entity_list[0]->x_commp += speed;
  * 						*/
 					}
 				} else if (ev.key.keysym.sym == SDLK_a) {
-					if (map_matrix[playerX - speed][playerY] == 0) {
+					if (map_matrix[playerY - speed][playerX] == 0) {
 						playerX -= speed;
 					}
 				} else if (ev.key.keysym.sym == SDLK_w) {
-					if (map_matrix[playerX][playerY - speed] == 0) {
+					if (map_matrix[playerY][playerX - speed] == 0) {
 						playerY -= speed;
 					}
 				} else if (ev.key.keysym.sym == SDLK_s) {
-					if (map_matrix[playerX][playerY + speed] == 0) {
+					if (map_matrix[playerY][playerX + speed] == 0) {
 						playerY += speed;
 					}
 				} else if (ev.key.keysym.sym == SDLK_x) {
@@ -260,34 +262,35 @@ int main (int argc, char** argv) {
 				}
 /* Allow player to loop around in the x axis direction*/
 				if (playerX < 0) {
-					playerX += WIDTH;
+					playerX += WIN_WIDTH;
 				} 
-				playerX %= WIDTH;
+				playerX %= WIN_WIDTH;
 			}
 		}
 		SDL_RenderClear (ren);
-/*		renderTexture (bgTex, ren, 0, 0);
+
+		/* A couple of hard-coded textures being renderred */
+		renderTexture (bgTex, ren, 0, 0);
 		renderTexture (health_bar_base, ren, 5, 5);
-		renderTexture (building, ren, 367, 79);
-		renderTexture (tent, ren, 231, 263);*/
-/* Eventually we need a general statement, probably within a for-loop, ike: */
+
 		for (ind = 1; ind < num_entities; ind ++) {
 			int x_comp = master_entity_list[ind]->x_comp;
 			int y_comp = master_entity_list[ind]->y_comp;
 			renderTexture (master_entity_list[ind]->visual, ren, x_comp, y_comp);
 		}
 
+		/* Deal with player Texture rendering separately, on outer layer. */
+/*		printf ("Player now at (%d, %d)\n", playerX, playerY);*/
 		renderTextureFactor (playerTex, ren, playerX, playerY, scale);
 
 		SDL_RenderPresent (ren);
 	}
 
-/*	SDL_DestroyTexture (building);*/
 	SDL_DestroyTexture (bgTex);
-/*	SDL_DestroyTexture (playerTex);*/
 	SDL_DestroyTexture (health_bar_base);
+
 /* Again, here we'll need a new for-loop, something like: */
-	for (ind = 0; ind < num_entities; ind ++) {
+	for (ind = 1; ind < num_entities; ind ++) {
 		SDL_DestroyTexture (master_entity_list[ind]->visual);
 		free (master_entity_list[ind]);
 		master_entity_list[ind] = NULL;
@@ -299,11 +302,11 @@ int main (int argc, char** argv) {
 	return 0;
 }
 
-static void logSDLError (std::ostream &os, const std::string &message) {
+void logSDLError (std::ostream &os, const std::string &message) {
 	os << message << " ERR: " << SDL_GetError() << std::endl;
 }
 
-static SDL_Texture *loadTextureFromPNG (const std::string &file, SDL_Renderer *ren) {
+SDL_Texture *loadTextureFromPNG (const std::string &file, SDL_Renderer *ren) {
 	const char *mod = "rb";
 	SDL_Texture *texture = NULL;
 	SDL_RWops *rwop = SDL_RWFromFile (file.c_str(), mod);
@@ -322,7 +325,7 @@ static SDL_Texture *loadTextureFromPNG (const std::string &file, SDL_Renderer *r
 	return texture;
 }
 
-static void renderTexture (SDL_Texture *texture, SDL_Renderer *ren, int x, int y) {
+void renderTexture (SDL_Texture *texture, SDL_Renderer *ren, int x, int y) {
 	SDL_Rect destination;
 	destination.x = x;
 	destination.y = y;
@@ -331,7 +334,7 @@ static void renderTexture (SDL_Texture *texture, SDL_Renderer *ren, int x, int y
 	SDL_RenderCopy (ren, texture, NULL, &destination);
 }
 
-static void renderTextureFactor (SDL_Texture *texture, SDL_Renderer *ren, int x, int y, float fact) {
+void renderTextureFactor (SDL_Texture *texture, SDL_Renderer *ren, int x, int y, float fact) {
 	SDL_Rect destination;
 	destination.x = x;
 	destination.y = y;
@@ -342,7 +345,7 @@ static void renderTextureFactor (SDL_Texture *texture, SDL_Renderer *ren, int x,
 	SDL_RenderCopy (ren, texture, NULL, &destination);
 }
 
-static const char* getBGStringFromNum (unsigned int ref_num) {
+const char* getBGStringFromNum (unsigned int ref_num) {
 	return "plains_fort.png";
 }
 
@@ -367,3 +370,26 @@ static int** getMapFromBG (std::string bg_name) {
 	}
 	return (int **) (&(*(newMap)));
 }		*/
+
+SDL_Texture *renderText (const std::string &msg, const std::string &fontFile, SDL_Color color, int size, SDL_Renderer *ren) {
+	TTF_Font *font = TTF_OpenFont (fontFile.c_str(), size);
+	if (font == NULL) {
+		logSDLError (std::cout, "TTF_OpenFont() FontNotFound");
+		return NULL;
+	}
+
+	SDL_Surface *fontSurface = TTF_RenderText_Blended (font, msg.c_str(), color);
+	if (fontSurface == NULL) {
+		logSDLError (std::cout, "TTF_RenderText");
+		TTF_CloseFont (font);
+		return NULL;
+	}
+
+	SDL_Texture *textureFont = SDL_CreateTextureFromSurface(ren, fontSurface);
+	if (textureFont == NULL) {
+		logSDLError (std::cout, "CreateTextureFromSurface");
+	}
+	SDL_FreeSurface (fontSurface);
+	TTF_CloseFont (font);
+	return textureFont;
+}
