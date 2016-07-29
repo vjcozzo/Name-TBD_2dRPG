@@ -9,15 +9,18 @@ void renderTexture (SDL_Texture *tex, SDL_Renderer *ren, int x, int y);
 void renderTextureFactor (SDL_Texture *tex, SDL_Renderer *ren, int x, int y, float fact);
 const char* getBGStringFromNum (unsigned int ref_num);
 SDL_Texture *renderText (const std::string &msg, const std::string &fontFile, SDL_Color color, int fontSize, SDL_Renderer *ren);
+void deleteEntity (Node** elist, Entity *toBeDeleted);
+void addEntity (Node** elist, SDL_Texture *texture, std::string id, int x_pos, int y_pos);
 
 typedef struct entity {
 	SDL_Texture *visual;
+	std::string id;
 	int x_comp, y_comp;
 	/* any additional data can be stored below... */
 } Entity;
 
 struct node {
-	Entity info;
+	Entity *info;
 	struct node *next;
 };
 

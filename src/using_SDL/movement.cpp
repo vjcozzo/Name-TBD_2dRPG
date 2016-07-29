@@ -48,7 +48,7 @@ int main (int argc, char** argv) {
 	SDL_Texture* master_entity_list[N];
 */
 
-	const std::string path = "/home/vjcozzo/Name-TBD/res/";
+	const std::string path = /*"/home/vjcozzo/Name-TBD/res/";*/"../../res/";
 	const std::string bg = "plains_fort.png";
 
 	SDL_Texture *bgTex = loadTextureFromPNG (path + "" + bg, ren);
