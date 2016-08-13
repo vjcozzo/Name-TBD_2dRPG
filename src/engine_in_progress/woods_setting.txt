@@ -1,0 +1,6 @@
+enemy-bat-0.png, 367, 79, 377, 89
+enemy-bat-0.png, 343, 179, 353, 189
+enemy-bat-0.png, 399, 123, 409, 133
+enemy-bat-0.png, 296, 139, 306, 149
+health_base.png, 5, 5, 0, 0
+tent_small_blue.png, 231, 263, 240, 264

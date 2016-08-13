@@ -1,0 +1,2 @@
+plains_fort.png, 255, 300, 255
+woods_bg.png, 260, 280, 280

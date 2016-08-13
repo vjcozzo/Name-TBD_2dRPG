@@ -1,0 +1,3 @@
+building.png, 367, 79, 370, 80
+health_base.png, 5, 5, 0, 0
+tent_small_blue.png, 231, 263, 240, 264
