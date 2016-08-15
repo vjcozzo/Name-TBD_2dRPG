@@ -306,6 +306,7 @@ int main (int argc, char** argv) {
 	SDL_Event ev;
 	int open = 1/*, iteration = 0*/;
 	float scale = 2.0f;
+/*	unsigned long ctr = 0;*/
 
 	while (open) {
 		while (SDL_PollEvent (&ev)) {
@@ -336,7 +337,8 @@ int main (int argc, char** argv) {
 						y_coord -= speed;
 					}
 				} else if (ev.key.keysym.sym == SDLK_s) {
-					if (map_matrix[y_coord + speed][x_coord] == 0) {
+					if ((y_coord + speed < WIN_HEIGHT)
+						&& map_matrix[y_coord + speed][x_coord] == 0) {
 						master_entity_list->info->y_comp += speed;
 						y_coord += speed;
 					}
@@ -366,6 +368,7 @@ int main (int argc, char** argv) {
 				master_entity_list->info->y_comp,
 				scale);
 		SDL_RenderPresent (ren);
+/*		ctr += 1;*/
 	}
 
 	deleteRecursive (master_entity_list);

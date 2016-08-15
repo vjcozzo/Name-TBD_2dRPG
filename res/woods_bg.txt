@@ -1,6 +1,10 @@
-enemy-bat-0.png, 367, 79, 377, 89
-enemy-bat-0.png, 343, 68, 353, 78
-enemy-bat-0.png, 399, 23, 409, 33
-enemy-bat-0.png, 296, 39, 306, 49
-health_base.png, 5, 5, 0, 0
-tent_small_blue.png, 231, 263, 240, 264
+enemy-bat-0.png, 367, 79, 377, 89, 2
+enemy-bat-1.png
+enemy-bat-0.png, 343, 68, 353, 78, 2
+enemy-bat-1.png
+enemy-bat-0.png, 399, 23, 409, 33, 2
+enemy-bat-1.png
+enemy-bat-0.png, 296, 39, 306, 49, 2
+enemy-bat-1.png
+health_base.png, 5, 5, 0, 0, 1
+tent_small_blue.png, 231, 263, 240, 264, 1

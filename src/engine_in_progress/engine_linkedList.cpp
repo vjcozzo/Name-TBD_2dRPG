@@ -79,9 +79,10 @@ int main (int argc, char** argv) {
 
 /* We will need a game state and background number, for general
  *   background loading */
-	unsigned int /*game_state = 11,*/ bg_num = 99;
+	unsigned int /*game_state = 11,*/ bg_num = 100;
 
 	const std::string path = "../../res/";
+	int path_len = path.size();
 	const char *data = "bg_data.txt";
 	const char *bg = getBGStringFromNum (bg_num);
 
@@ -89,16 +90,28 @@ int main (int argc, char** argv) {
 	SDL_Texture *bgTex = loadTextureFromPNG (path + "" + bg, ren);
 	SDL_Texture *playerTex = loadTextureFromPNG (path + "player_transparent.png", ren);
 
-
 	ind = 0;
 	int found = 0;
 
+	char user_name[MAX_LEN] = {'\0'};
+	user_name[0] = 'm';
+	user_name[1] = '_';
+	user_name[2] = 'p';
+	user_name[3] = 'l';
+	user_name[4] = 'a';
+	user_name[5] = 'y';
+	user_name[6] = 'e';
+	user_name[7] = 'r';
+	user_name[8] = '\0';
 	/* Set the basic, default data for the player here. */
 	/* Player will always be the first entity. */
 	Entity *player_data  = (Entity *) malloc (sizeof (Entity));
-	player_data->visual = playerTex;
+	animation player_frames = {playerTex, NULL};
+	player_data->head_anim = &player_frames;
+	player_data->id = user_name;
 	player_data->x_comp = 100;
 	player_data->y_comp = 300;
+	player_data->num_frames = 1;
 	node* master_entity_list = (node *) malloc (sizeof (node));
 	master_entity_list->info = player_data;
 	master_entity_list->next = NULL;
@@ -174,40 +187,147 @@ int main (int argc, char** argv) {
 			ind = 1;
 /*			printf ("Debug msg: About to start inner while loop, to read individual entity data\n");*/
 			while (fgets (whole_line, 4*MAX_LEN + 1, specific_entities_list)) {
+				int width, height,
+				    frame_count=1, indf, run_ind;
+				char postLine[MAX_LEN] = {'\0'};
+				char nextPngName[MAX_LEN] = {'\0'};
+				char nextPngNameWithPath[MAX_LEN] = {'\0'};
+				int ent_initX, ent_initY,
+				    floorX, floorY;
+				for (indc = 0; indc < path_len; indc ++) {
+					nextPngNameWithPath[indc] = path[indc];
+				}
+/*				printf ("Debug msg: %s", whole_line);*/
+				while (whole_line[indc - path_len] != ',') {
+					nextPngNameWithPath[indc] = whole_line[indc - path_len];
+					nextPngName[indc - path_len] = whole_line[indc - path_len];
+					indc ++;
+				}
+/*				printf ("Debug: Extracted the next png name.\n");*/
+/*				printf ("\tIt's %s!\n", nextPngName);*/
+				indc -= path_len;
+				indc ++;
+				subtraction = indc;
+/*				printf ("Now the index right after the comma is %d\n", (indc-path_len));*/
+				while ((whole_line[indc] != '\n')
+					&& (indc < MAX_LEN)) {
+					postLine[indc-subtraction] = whole_line[indc];
+					indc ++;
+				}
+/*				printf ("Stopped at %d becuase there is a newline character there.\n", indc);*/
+				indc = 0;
+				sscanf (postLine, "%d,%d,%d,%d,%d",
+					&ent_initX, &ent_initY,
+				       	&floorX, &floorY, &frame_count);
+/*				if (master_entity_list[ind] == NULL) {
+					std::cout << "Nooo! Failure. COULD NOT ALLOCATE MEMORY" << std::endl;
+					return -1;
+				}*/
+				SDL_Texture *next_texture = loadTextureFromPNG (nextPngNameWithPath, ren);
+				addEntity (&master_entity_list, next_texture, nextPngName, ent_initX, ent_initY, frame_count);
+/*				printf ("reading from postline=\"%s\"\n", postLine);*/
+				indf = 1;
+				/* Get next png name */
+/*				char nextPngName[MAX_LEN] = {'\0'};*/
+				node *runner = master_entity_list;
+				for (run_ind = 0; run_ind < ind; run_ind ++) {
+					runner = runner->next;
+				}
+				Entity *new_entity = runner->info;
+
+				if (frame_count > 1) {
+
+					while (((indf < frame_count)) &&
+						(fgets(whole_line, 4*MAX_LEN+1,
+						specific_entities_list) != NULL)) {
+/*						printf("Now processing animation frame %d of %d.\n", indf, frame_count);*/
+						sscanf (whole_line, "%s\n", nextPngName);
+						if (nextPngName[strlen(nextPngName) - 1] == '\n') {
+							nextPngName[strlen(nextPngName) - 1] = '\0';
+						}
+/*						printf("\tpng name is %s.f.;\n\tLine identified is %s.F.\n", nextPngName, whole_line);*/
+					/* NOTE: here we need to prepend
+					 * the path string
+					 * to the nextPngName
+					 * in order for the PNG to be 
+					 * identified:*/
+						for (indc = 0;
+						(indc < MAX_LEN) && (nextPngName[indc] != '\n');
+							       	indc ++) {
+							nextPngNameWithPath[indc + path_len] = nextPngName[indc];
+						}
+						SDL_Texture *next_anim =
+						loadTextureFromPNG (nextPngNameWithPath, ren);
+						addAnimation(new_entity, next_anim);
+
+						for (indc = 0; indc < 4*MAX_LEN; indc ++) {
+							whole_line[indc] = '\0';
+						}
+						for (indc = 0; indc < MAX_LEN; indc ++) {
+							nextPngName[indc] = '\0';
+						}
+						for (indc = path_len; indc < MAX_LEN; indc ++) {
+							nextPngNameWithPath[indc] = '\0';
+						}
+						indc ++;
+						indf ++;
+					}
+				}
+
+				SDL_QueryTexture (next_texture, NULL, NULL, &width, &height);
+/*				printf ("Debug: next texture, %s, has: \n"\
+			"\tbaseX %d, baseY %d;\n\twidth %d and height %d\n",
+					nextPngName,
+					floorX,
+					floorY,
+					width,
+					height);*/
+				for (indr = floorY;
+				    (indr < floorY+height) && 
+				    (indr < WIN_HEIGHT); indr ++) {
+					for (indc = floorX; 
+					    (indc < floorX+width) && 
+					    (indc < WIN_WIDTH);
+				  	    indc ++) {
+						map_matrix[indr][indc] = 1;
+					}
+				}
+				ind ++;
+/*
 				char postLine[MAX_LEN] = {'\0'};
 				char nextPngName[MAX_LEN] = {'\0'};
 				int ent_initX, ent_initY;
 				indc = 0;
-/*				printf ("Debug msg: %s", whole_line);*/
+/ *				printf ("Debug msg: %s", whole_line);* /
 				while (whole_line[indc] != ',') {
 					nextPngName[indc] = whole_line[indc];
 					indc ++;
 				}
-/*				printf ("Debug: Extracted the next png name.\n");*/
-/*				printf ("It's %s!\n", nextPngName);*/
+/ *				printf ("Debug: Extracted the next png name.\n");* /
+/ *				printf ("It's %s!\n", nextPngName);* /
 				indc ++;
 				subtraction = indc;
 				while ((whole_line[indc] != '\n') && (indc < MAX_LEN)) {
 					postLine[indc - subtraction] = whole_line[indc];
 					indc ++;
 				}
-/*				indc = 0;*/
+/ *				indc = 0;* /
 				sscanf (postLine, "%d,%d", &ent_initX, &ent_initY);
-/*				*(master_entity_list + ind) = (entity *) malloc (sizeof (entity));
+/ *				*(master_entity_list + ind) = (entity *) malloc (sizeof (entity));
 				if (master_entity_list[ind] == NULL) {
 					std::cout << "Nooo! Failure. COULD NOT ALLOCATE MEMORY" << std::endl;
 					return -1;
-				}*/
-/*				printf ("Debug: Successfully allocated memory\n");*/
+				}* /
+/ *				printf ("Debug: Successfully allocated memory\n");* /
 				SDL_Texture *next_texture = loadTextureFromPNG (path + "" + nextPngName, ren);
 				addEntity (&master_entity_list, next_texture, nextPngName, ent_initX, ent_initY);
-/*				printf ("Debug: made SDL Texture for this entity.\n");*/
-/*			       	master_entity_list[ind]->x_comp = ent_initX;
+/ *				printf ("Debug: made SDL Texture for this entity.\n");* /
+/ *			       	master_entity_list[ind]->x_comp = ent_initX;
 				master_entity_list[ind]->y_comp = ent_initY;
 				printf ("Debug: SET THE X AND Y\n");
 				master_entity_list[ind]->visual = next_texture;*/
-				ind ++;
 			}
+			fclose(specific_entities_list);
 			found = 1;
 		}
 	}
@@ -235,21 +355,12 @@ int main (int argc, char** argv) {
 		return 1;
 	}
 
-	/*NOTE: Now may be a good time to work on setting the map_matrix
-	 * in a more accurate manner, based on the Component Entities.
-	 * This is the next step: running through each Entity currently in existence,
-	 * i.e. iterating through the linked list master_entity_list,
-	 * and updating values of map_matrix[][] based upon the location of
-	 * each entity.
-	 *
-	 * I plan to add this  soon, probably next week.
-	 * -VC
-	 * */
-
-	/* These are variables to store the player's initial position */
+	/* Following are variables to store the player's initial position */
 	/* Obviously they will be changed later on and will change where
 	 * the player object entity is renderred. */
-	int playerX = 100, playerY = 300/*, winstate = 0*/;
+/*	int / *playerX = 100, playerY = 300*//*, winstate = 0* /;*/
+	int x_coord, y_coord, playerWidth, playerHeight;
+	SDL_QueryTexture (master_entity_list->info->head_anim->visual, NULL, NULL, &playerWidth, &playerHeight);
 
 	/* Warning: please don't make this speed variable too large, 
 		else the player might go off screen in the left direction... */
@@ -257,11 +368,16 @@ int main (int argc, char** argv) {
 	SDL_Event ev;
 	int open = 1/*, iteration = 0*/;
 	float scale = 2.0f;
+	unsigned int ctr = 1;
 
 	while (open) {
 		while (SDL_PollEvent (&ev)) {
-			playerX = master_entity_list->info->x_comp;
-			playerY = master_entity_list->info->y_comp;
+/*			playerX = master_entity_list->info->x_comp;*/
+/*			playerY = master_entity_list->info->y_comp;*/
+			x_coord = (master_entity_list->info->x_comp 
+					+ ((scale*playerWidth)/2));
+			y_coord = master_entity_list->info->y_comp
+					+ ((scale*playerHeight));
 /* Polled an event for this iteration. */
 			if (ev.type == SDL_QUIT) {
 /* Quit - by exiting the loop / closing the window. */
@@ -270,22 +386,22 @@ int main (int argc, char** argv) {
 			else if (ev.type == SDL_KEYDOWN) {
 /* Process the WASD key presses: */
 				if (ev.key.keysym.sym == SDLK_d) {
-					if (map_matrix[playerY][playerX + speed] == 0) {
+					if (map_matrix[y_coord][x_coord + speed] == 0) {
 						master_entity_list->info->x_comp += speed;
 /* In the future...? Would it be:
  * 						master_entity_list[0]->x_commp += speed;
  * 						*/
 					}
 				} else if (ev.key.keysym.sym == SDLK_a) {
-					if (map_matrix[playerY][playerX -  speed] == 0) {
+					if (map_matrix[y_coord][x_coord -  speed] == 0) {
 						master_entity_list->info->x_comp -= speed;
 					}
 				} else if (ev.key.keysym.sym == SDLK_w) {
-					if (map_matrix[playerY - speed][playerX] == 0) {
+					if (map_matrix[y_coord - speed][x_coord] == 0) {
 						master_entity_list->info->y_comp -= speed;
 					}
 				} else if (ev.key.keysym.sym == SDLK_s) {
-					if (map_matrix[playerY + speed][playerX] == 0) {
+					if (map_matrix[y_coord + speed][x_coord] == 0) {
 						master_entity_list->info->y_comp += speed;
 					}
 				} else if ((ev.key.keysym.sym == SDLK_x) || (ev.key.keysym.sym == SDLK_q)) {
@@ -305,20 +421,36 @@ int main (int argc, char** argv) {
 		renderTexture (bgTex, ren, 0, 0);
 
 		node *runner = master_entity_list->next;
+		/* Now, to render all the proper textures of each entity.*/
+		unsigned int ctr_adjusted = ctr % 5;
+		if (ctr % 15 == 0) {
+			ctr_adjusted ++;
+			ctr_adjusted %= 5;
+		}
 		while (runner != NULL) {
 			int x_pos, y_pos;
-			SDL_Texture *nextText = runner->info->visual;
+			unsigned int anim_ind = 0;
+			anim_ind = runner->info->num_frames;
+			animation *next_frame = runner->info->head_anim;
+			if (runner->info->num_frames > 1) {
+				for (; anim_ind < ctr_adjusted; anim_ind ++) {
+					next_frame = next_frame->next;
+				}
+
+			}
+			SDL_Texture *frame_texture = next_frame->visual;
 			x_pos = runner->info->x_comp;
 			y_pos = runner->info->y_comp;
-			renderTexture (nextText, ren, x_pos, y_pos);
+			renderTexture (frame_texture, ren, x_pos, y_pos);
 			runner = runner->next;
 		}
 /* NOTE: Render the Player object last. */
-		renderTextureFactor (master_entity_list->info->visual, ren, 
+		renderTextureFactor (master_entity_list->info->head_anim->visual, ren, 
 				master_entity_list->info->x_comp,
 				master_entity_list->info->y_comp,
 				scale);
 		SDL_RenderPresent (ren);
+		ctr ++;
 	}
 
 	deleteRecursive (master_entity_list);
@@ -373,30 +505,14 @@ void renderTextureFactor (SDL_Texture *texture, SDL_Renderer *ren, int x, int y,
 }
 
 const char* getBGStringFromNum (unsigned int ref_num) {
-	return "plains_fort.png";
-}
-
-/* FUNCTION UNDER CONSTRUCTION ****
- * should eventually deal with any general background file name!
- *  * /
-static int** getMapFromBG (std::string bg_name) {
-	/ *
-	 * Future/TO DO :the  more general design will be to:
-	 * Look up the relevant file, return a 2d array
-	 * with 1s and 0s based solely on the landscape (where there is land to walk on)
-	 * but for now do a hard-coded solution:
-	 * */
-/*	int newMap[WIDTH][HEIGHT] = {0};
-	if (strcmp(bg_name.c_str(), "plains_fort.png") == 0) {
-		int indr, indc;
-		for (indr = 0; indr < WIDTH; indr ++) {
-			for (indc = 0; indc < 373; indc ++) {
-				newMap[indr][indc] = 1;
-			}
-		}
+	switch (ref_num) {
+		case 99: return "plains_fort.png\0"; break;
+		case 100: return "woods_bg.png\0"; break;
+		default: return "plains_fort.png\0"; break;
 	}
-	return (int **) (&(*(newMap)));
-}		*/
+	logSDLError (std::cout, "BACKGROUND REFNUM SELECTION");
+	return "";
+}
 
 SDL_Texture *renderText (const std::string &msg, const std::string &fontFile, SDL_Color color, int size, SDL_Renderer *ren) {
 	TTF_Font *font = TTF_OpenFont (fontFile.c_str(), size);
@@ -422,6 +538,7 @@ SDL_Texture *renderText (const std::string &msg, const std::string &fontFile, SD
 }
 
 void deleteEntity (node *head, Entity *addr) {
+/*	int indf, num_anims=addr->num_frames;*/
 	node *aheadNode = head;
 	node *tmp = NULL;
 
@@ -435,12 +552,34 @@ void deleteEntity (node *head, Entity *addr) {
 		return;
 	}
 	tmp->next = aheadNode->next;
-	SDL_DestroyTexture (aheadNode->info->visual);
+	animation *next_frame = aheadNode->info->head_anim;
+	deleteAnimationFrames(next_frame, addr->num_frames);
+/*	for (indf = 0; indf < num_anims; indf ++) {
+		SDL_DestroyTexture (next_frame->visual);
+		next_frame = next_frame->next;
+	}*/
 	free (aheadNode->info);
 	free (aheadNode);
 }
 
-void addEntity (node** eList, SDL_Texture *texture, char *identifier, int x_pos, int y_pos) {
+void deleteAnimationFrames (animation *node, int iterations) {
+	if (NULL == node) {
+		return;
+	} else if (iterations == 1) {
+		node->next = NULL;
+		SDL_DestroyTexture (node->visual);
+		free (node);
+		return;
+	} else {
+		deleteAnimationFrames (node->next, iterations-1);
+		node->next = NULL;
+		SDL_DestroyTexture (node->visual);
+		free (node);
+		return;
+	}
+}
+
+void addEntity (node** eList, SDL_Texture *texture, char *identifier, int x_pos, int y_pos, int frames) {
 	node *aheadNode = *eList;
 	node *tmp = NULL;
 
@@ -450,12 +589,17 @@ void addEntity (node** eList, SDL_Texture *texture, char *identifier, int x_pos,
 	}
 
 	if (tmp == NULL) { /* In the case that *eList (the head node location) is NULL */
+		animation *text_wrapper = (animation *) malloc (sizeof(animation));
+		text_wrapper->visual = texture;
+		text_wrapper->next = NULL;
+
 		Entity *head = (Entity *) malloc (sizeof (Entity));
-		head->visual = texture;
+		head->head_anim = text_wrapper;
 		strcpy (head->id, identifier);
 /*		head->id = identifier;*/
 		head->x_comp = x_pos;
 		head->y_comp = y_pos;
+		head->num_frames = frames;
 		
 		node *newNode = (node *) malloc (sizeof (node));
 		newNode->info = head;
@@ -464,17 +608,49 @@ void addEntity (node** eList, SDL_Texture *texture, char *identifier, int x_pos,
 		return;
 	}
 
-	Entity *newEnt = (Entity *) malloc (sizeof (Entity));
-	newEnt->visual = texture;
+	animation *text_wrapper = (animation *) malloc (sizeof(animation));
+	text_wrapper->visual = texture;
+	text_wrapper->next = NULL;
+
+	Entity *newEnt = (Entity *) malloc (sizeof(Entity));
+	newEnt->head_anim = text_wrapper;
+/*	newEnt->visual = texture;*/
 	newEnt->id = identifier;
 	newEnt->x_comp = x_pos;
 	newEnt->y_comp = y_pos;
+	newEnt->num_frames = frames;
 
 	node *newNode = (node *) malloc (sizeof(node));
 	newNode->info = newEnt;
 	newNode->next = NULL;
 
 	tmp->next = newNode;
+}
+
+void addAnimation (Entity *subject, SDL_Texture *tba) {
+	animation *perma_head = subject->head_anim;
+	animation *prev = NULL;
+	animation *forward = subject->head_anim/*->next*/;
+
+	animation *new_text = (animation *) malloc (sizeof(animation));
+	new_text->visual = tba;
+	new_text->next = NULL;
+	while ((forward != NULL) && (forward != perma_head)) {
+		prev = forward;
+		forward = forward->next;
+	}
+	if ((forward == NULL)) {
+		prev->next = new_text;
+		new_text->next = prev;
+	} else if (forward == perma_head) {
+		if (prev == NULL) { /*  */
+			perma_head->next = new_text;
+			new_text->next = perma_head;
+			return;
+		}
+		prev->next = new_text;
+		new_text->next = perma_head;
+	}
 }
 
 void deleteRecursive (node *top) {

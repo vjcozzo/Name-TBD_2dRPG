@@ -1,12 +1,15 @@
 /*#ifndef "general_engine.h"*/
 /*#define "general_engine.h"*/
-const int height = 365;
-const int width = 710;
+struct animation {
+	SDL_Texture *visual;
+	animation *next;
+};
 
 typedef struct entity {
-	SDL_Texture *visual;
+	animation *head_anim;
+/*	SDL_Texture *visual;*/
 	char *id;
-	int x_comp, y_comp;
+	int x_comp, y_comp, num_frames;
 	/* any additional data can be stored below... */
 } Entity;
 
@@ -23,6 +26,8 @@ const char* getBGStringFromNum (unsigned int ref_num);
 SDL_Texture *renderText (const std::string &msg, const std::string &fontFile, SDL_Color color, int fontSize, SDL_Renderer *ren);
 void deleteEntity (node** elist, Entity *toBeDeleted);
 void deleteRecursive (node *elist);
-void addEntity (node** elist, SDL_Texture *texture, char* id, int x_pos, int y_pos);
+void addEntity (node** elist, SDL_Texture *texture, char* id, int x_pos, int y_pos, int frames);
+void addAnimation (Entity *subject, SDL_Texture *texture);
+void deleteAnimationFrames (animation *frame, int iterations);
 
 /*#endif	*/
