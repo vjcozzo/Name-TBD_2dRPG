@@ -1,9 +1,9 @@
 CXX = g++
-CXXFLAGS = -Wall -Wwrite-strings -Wshadow -Werror\
-	   -pedantic-errors -fno-stack-protector -g
+CXXFLAGS = -ggdb -O0 -Wall -Wwrite-strings -Wshadow -Werror\
+	   -pedantic-errors -fno-stack-protector
 LIBFLAGS = -lSDL2-2.0 -lSDL2_image -lSDL2_ttf
 EXECUTABLES = engine_bst engine_linked_list engine_bst_enemies \
-	      engine_linked_list_spaces
+	      engine_linked_list_spaces engine_heap
 
 all: $(EXECUTABLES)
 	@rm -f *.o
@@ -14,26 +14,32 @@ clean:
 	@rm -f a.out
 	@rm -f *.exe
 
+engine_heap: engine_heap.h engine_heap.o
+	@$(CXX) -g engine_heap.cpp -o engine_heap.exe $(LIBFLAGS)
+
+engine_heap.o: engine_heap.cpp
+	@$(CXX) -c engine_heap.cpp $(CXXFLAGS) $(LIBFLAGS)
+
 engine_bst_enemies: engine_bst_woods_enemies.o
-	@$(CXX) engine_bst_woods_enemies.o -o engine_bst_enemies.exe $(LIBFLAGS)
+	@$(CXX) -g engine_bst_woods_enemies.o -o engine_bst_enemies.exe $(LIBFLAGS)
 
 engine_bst_woods_enemies.o: engine_bst_woods_enemies.cpp engine_bst.h
 	@$(CXX) -c engine_bst_woods_enemies.cpp $(CXXFLAGS) $(LIBFLAGS)
 
 engine_bst: engine_bst.o
-	@$(CXX) engine_bst.o -o engine_bst.exe $(LIBFLAGS)
+	@$(CXX) -g engine_bst.o -o engine_bst.exe $(LIBFLAGS)
 
 engine_bst.o: engine_bst.cpp engine_bst.h
 	@$(CXX) -c engine_bst.cpp $(CXXFLAGS) $(LIBFLAGS)
 
 engine_linked_list: engine_linkedList.o
-	@$(CXX) engine_linkedList.o -o linked_list_engine_test.exe $(LIBFLAGS)
+	@$(CXX) -g engine_linkedList.o -o linked_list_engine_test.exe $(LIBFLAGS)
 
 engine_linkedList.o: engine_linkedList.cpp engine_linkedList.h
 	@$(CXX) -c engine_linkedList.cpp $(CXXFLAGS) $(LIBFLAGS)
 
 engine_linked_list_spaces: engine_ll_spaces.o
-	@$(CXX) engine_linkedList.o -o ll_engine_spaces.exe $(LIBFLAGS)
+	@$(CXX) -g engine_linkedList.o -o ll_engine_spaces.exe $(LIBFLAGS)
 
 engine_ll_spaces.o: engine_ll_spaces.cpp engine_linkedList.h
 	@$(CXX) -c engine_ll_spaces.cpp $(CXXFLAGS) $(LIBFLAGS)
