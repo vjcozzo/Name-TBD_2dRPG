@@ -11,7 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "engine_heap.h"
+#include "engine_heap.hpp"
 
 #define N 200
 #define MAX_LEN 64
@@ -88,19 +88,19 @@ int main (int argc, char** argv) {
     player_frames->visual = playerTex;
     player_frames->next = NULL;
 
-    Entity *player_data = (Entity *) malloc (sizeof(Entity));
-    player_data->head_anim = player_frames;
-    strcpy(player_data->id, user_name);
-    player_data->x_comp = 100;
-    player_data->y_comp = 300;
-    player_data->num_frames = 1;
-    player_data->priority = 100;
+    Entity *player_graphical = (Entity *) malloc (sizeof(Entity));
+    player_graphical->head_anim = player_frames;
+    strcpy(player_graphical->id, user_name);
+    player_graphical->x_comp = 100;
+    player_graphical->y_comp = 300;
+    player_graphical->num_frames = 1;
+    player_graphical->priority = 100;
 
     int set_ind;
     Entity **entity_list = (Entity **) malloc (16*sizeof(Entity *));
     if (entity_list == NULL) {
         printf("Evident failure in allocating memory for the entity list.\n");
-	free (player_data);
+	free (player_graphical);
 	free (player_frames);
 	SDL_DestroyTexture (bgTex);
 	SDL_DestroyTexture (playerTex);
@@ -109,7 +109,7 @@ int main (int argc, char** argv) {
         return 1;
     }
 /*    printf("Allocated memory for entity_list, the array of pointers\n");*/
-    entity_list[0] = player_data;
+    entity_list[0] = player_graphical;
     for (set_ind = 1; set_ind < DEFAULT_MAX_ENT;  set_ind ++) {
         entity_list[set_ind] = NULL;
     }
@@ -117,7 +117,7 @@ int main (int argc, char** argv) {
     if (master_heap == NULL) {
         printf("Evident failure in allocating memory for the master heap.\n");
         free (entity_list);
-        free (player_data);
+        free (player_graphical);
         free (player_frames);
         SDL_DestroyTexture (bgTex);
         SDL_DestroyTexture (playerTex);
@@ -314,7 +314,7 @@ int main (int argc, char** argv) {
     /* Obviously they will be changed later on and will change where
      * the player object entity is renderred. */
     int x_coord, y_coord, playerWidth, playerHeight;
-    SDL_QueryTexture(master_heap->list[0]->head_anim->visual,
+    SDL_QueryTexture(player_graphical->head_anim->visual,
 		    NULL, NULL, &playerWidth, &playerHeight);
     int speed = 2;
     SDL_Event ev;
@@ -323,13 +323,12 @@ int main (int argc, char** argv) {
     unsigned int ctr = 1;
 
 /* ******   MAIN GAME LOOP BELOW   ****** */
-    printf("About to START GAME LOOP ---------\n");
     while (open) {
         heap *h_prime = NULL;
         /* Update coordinates: */
-        x_coord = (player_data->x_comp 
+        x_coord = (player_graphical->x_comp 
                     + ((/*scale* */playerWidth)/2));
-        y_coord = player_data->y_comp
+        y_coord = player_graphical->y_comp
                     + ((/*scale* */playerHeight));
         while(SDL_PollEvent(&ev)) {
             /* Polled an event for this iteration. */
@@ -341,22 +340,22 @@ int main (int argc, char** argv) {
                 /* Process the WASD key presses: */
                 if (ev.key.keysym.sym == SDLK_d) {
                     if (map_matrix[y_coord][x_coord + speed] == 0) {
-                        player_data->x_comp += speed;
+                        player_graphical->x_comp += speed;
                     }
                 } else if (ev.key.keysym.sym == SDLK_a) {
                     if (map_matrix[y_coord][x_coord - speed] == 0) {
-                        player_data->x_comp -= speed;
+                        player_graphical->x_comp -= speed;
 		    } else {
                         printf("map_matrix[y_coord][x_coord-speed] = map_matrix[%d][%d]=1\n", y_coord, x_coord-speed);
 		    }
                 } else if (ev.key.keysym.sym == SDLK_w) {
                     if (map_matrix[y_coord - speed][x_coord] == 0) {
-                        player_data->y_comp -= speed;
+                        player_graphical->y_comp -= speed;
                     }
                 } else if (ev.key.keysym.sym == SDLK_s) {
                     if ((y_coord + speed < WIN_HEIGHT) && 
 	                (map_matrix[y_coord + speed][x_coord] == 0)) {
-                        player_data->y_comp += speed;
+                        player_graphical->y_comp += speed;
                     } else if (y_coord + speed >= WIN_HEIGHT) {
                         printf("%d + %d >= WIN_HEIGHT (365)\n", y_coord, speed);
 		    } else {
@@ -367,10 +366,10 @@ int main (int argc, char** argv) {
                     open = 0;
                 }
                 /* Allow player to loop around in the x axis direction*/
-                if (player_data->x_comp < 0) {
-                    player_data->x_comp += WIN_WIDTH;
+                if (player_graphical->x_comp < 0) {
+                    player_graphical->x_comp += WIN_WIDTH;
                 } 
-                player_data->x_comp %= WIN_WIDTH;
+                player_graphical->x_comp %= WIN_WIDTH;
             }
         }
         SDL_RenderClear(ren);

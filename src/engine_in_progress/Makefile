@@ -14,7 +14,7 @@ clean:
 	@rm -f a.out
 	@rm -f *.exe
 
-engine_heap: engine_heap.h engine_heap.o
+engine_heap: engine_heap.hpp engine_heap.o
 	@$(CXX) -g engine_heap.cpp -o engine_heap.exe $(LIBFLAGS)
 
 engine_heap.o: engine_heap.cpp
