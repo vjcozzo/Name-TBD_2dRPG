@@ -8,7 +8,7 @@
  * Correct me if I'm wrong, but the basic principles are the same
  * whether the object is the player, or an enemy. 
  * So I name this class 'actor' to represent a general object type.*/
-class actor {
+class Actor {
     private:
     unsigned int health, maxHealth;
     unsigned int exp, level, toNext;
@@ -16,7 +16,7 @@ class actor {
 
     public:
     /* Constructor */
-    actor (unsigned int hp, unsigned int maxHP, unsigned int exper,
+    Actor (unsigned int hp, unsigned int maxHP, unsigned int exper,
            unsigned int nowLevel, unsigned int toNextLev) {
         health = hp;
         maxHealth = maxHP;
@@ -91,7 +91,7 @@ void initHeap (heap **h);
 void addToHeap (heap **h, Entity *tba);
 heap *increment_size (heap *h);
 void deleteHeap (heap *h);
-void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend, heap **used);
+void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend, heap **used, unsigned int hp, unsigned int max);
 Entity *makeEntity (SDL_Texture *base_pic, char *label, int x, int y, int frames, int pri);
 
 /*#endif    */

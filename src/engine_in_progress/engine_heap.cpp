@@ -25,6 +25,11 @@ int main (int argc, char** argv) {
         logSDLError(std::cout, "SDL_Init");
         return 1;
     }
+    int flag = IMG_INIT_PNG;
+    if (IMG_Init(IMG_INIT_PNG)!=flag) {
+        logSDLError(std::cout, "SDL_image IMG_Init");
+	return 1;
+    }
     if (TTF_Init()) {
         logSDLError (std::cout, "TTF_Init");
         SDL_Quit();
@@ -68,7 +73,7 @@ int main (int argc, char** argv) {
 /*    SDL_Texture *playerLoc = loadTextureFromFont();*/
     SDL_Texture *bgTex = loadTextureFromPNG(path + "" + bg, ren);
     SDL_Texture *playerTex = loadTextureFromPNG
-                                 (path + "player_transparent.png", ren);
+                                 (path + "player_doubleSize.png", ren);
 
     int found = 0;
 
@@ -95,6 +100,8 @@ int main (int argc, char** argv) {
     player_graphical->y_comp = 300;
     player_graphical->num_frames = 1;
     player_graphical->priority = 100;
+
+    Actor player_data = Actor(6, 10, 1, 1, 499);
 
     int set_ind;
     Entity **entity_list = (Entity **) malloc (16*sizeof(Entity *));
@@ -193,14 +200,10 @@ int main (int argc, char** argv) {
             pngFileName[ind+1] = 't';
             pngFileName[ind+2] = 'x';
             pngFileName[ind+3] = 't';
-/* This texture is redundant, since we already have a background texture initialized above. However, in a general engine, this may need to be uncommented. */
-/*            SDL_Texture *bg_texture = loadTextureFromPNG (path + "" + pngName, ren);    */
             FILE* specific_entities_list = fopen(pngFileName, "r");
             ind = 1;
-/*            printf("Debug msg: About to start inner while loop, to read individual entity data\n");*/
-            while (fgets(whole_line, 4*MAX_LEN + 1, specific_entities_list)) {
-                int width, height,
-                    frame_count=1, indf;
+            while (fgets(whole_line, 4*MAX_LEN+1, specific_entities_list)) {
+                int width, height, indf, frame_count=1;
                 char postLine[MAX_LEN] = {'\0'};
                 char nextPngName[MAX_LEN] = {'\0'};
                 char nextPngNameWithPath[MAX_LEN] = {'\0'};
@@ -235,7 +238,7 @@ int main (int argc, char** argv) {
                 SDL_Texture *next_texture 
                              = loadTextureFromPNG(nextPngNameWithPath, ren);
                 Entity *nextEnt = makeEntity (next_texture, nextPngName,
-			       	ent_initX, ent_initY, frame_count, entPri);
+                                 ent_initX, ent_initY, frame_count, entPri);
                 indf = 1;
 /*                printf("reading from postline=\"%s\"\n", postLine);*/
                 if (frame_count > 1) {
@@ -286,10 +289,10 @@ int main (int argc, char** argv) {
                     height);*/
                 addToHeap(&master_heap, nextEnt);
                 for (indr = floorY;
-                    (indr < floorY+height) && 
+                    (indr < floorY+height) &&
                     (indr < WIN_HEIGHT); indr ++) {
-                    for (indc = floorX; 
-                        (indc < floorX+width) && 
+                    for (indc = floorX;
+                        (indc < floorX+width) &&
                         (indc < WIN_WIDTH);
                           indc ++) {
                         map_matrix[indr][indc] = 1;
@@ -318,7 +321,7 @@ int main (int argc, char** argv) {
 		    NULL, NULL, &playerWidth, &playerHeight);
     int speed = 2;
     SDL_Event ev;
-    int open = 1/*, iteration = 0*/;
+    bool open = true/*, iteration = 0*/;
 /*    float scale = 2.0f;*/
     unsigned int ctr = 1;
 
@@ -334,7 +337,7 @@ int main (int argc, char** argv) {
             /* Polled an event for this iteration. */
             if (ev.type == SDL_QUIT) {
             /* Quit - by exiting the loop / closing the window. */
-                open = 0;
+                open = false;
             }
             else if (ev.type == SDL_KEYDOWN) {
                 /* Process the WASD key presses: */
@@ -354,16 +357,17 @@ int main (int argc, char** argv) {
                     }
                 } else if (ev.key.keysym.sym == SDLK_s) {
                     if ((y_coord + speed < WIN_HEIGHT) && 
-	                (map_matrix[y_coord + speed][x_coord] == 0)) {
+                              (map_matrix[y_coord + speed][x_coord] == 0)) {
                         player_graphical->y_comp += speed;
                     } else if (y_coord + speed >= WIN_HEIGHT) {
-                        printf("%d + %d >= WIN_HEIGHT (365)\n", y_coord, speed);
-		    } else {
+                        printf("%d + %d >= WIN_HEIGHT (365)\n",
+                                                      y_coord, speed);
+                    } else {
                         printf("map_matrix[y_coord+speed][x_coord] = map_matrix[%d][%d]=1\n", y_coord+speed, x_coord);
-		    }
+                    }
                 } else if ((ev.key.keysym.sym == SDLK_x) || (ev.key.keysym.sym == SDLK_q)) {
                 /* Allow exit on X key or Q key: */
-                    open = 0;
+                    open = false;
                 }
                 /* Allow player to loop around in the x axis direction*/
                 if (player_graphical->x_comp < 0) {
@@ -380,43 +384,17 @@ int main (int argc, char** argv) {
 
         /* Now, to render all the proper textures of each entity.*/
         unsigned int ctr_adjusted = ctr % 5;
-        if (ctr % 4500 == 0) {
+        if (ctr % 3000000 == 0) {
             ctr_adjusted ++;
             ctr_adjusted %= 5;
         }
-        renderHeap (master_heap, ctr_adjusted, ren, &h_prime);
-/* On a rather happy note, much of the following code
- * block can be replaced - in the Heap implementation - 
- * by the renderHeap () function. */
-/*        for (render_ind=0; render_ind < master_heap->size; render_ind ++) {
-            int x_pos, y_pos;
-            unsigned int anim_ind = 0;
-            anim_ind = master_heap->list[render_ind]->num_frames;
-            animation *next_frame = master_heap->list[render_ind]->head_anim;
-            if (master_heap->list[render_ind]->num_frames > 1) {
-                for (; anim_ind < ctr_adjusted; anim_ind ++) {
-                    next_frame = next_frame->next;
-                }
-            }
-            SDL_Texture *frame_texture = next_frame->visual;
-            x_pos = master_heap->list[render_ind]->x_comp;
-            y_pos = master_heap->list[render_ind]->y_comp;
-            renderTexture(frame_texture, ren, x_pos, y_pos);
-        }*/
-        /* NOTE: Render the Player object last. */
-	/*
-        renderTextureFactor(master_heap->list[0]->head_anim->visual, ren, 
-                master_heap->list[0]->x_comp,
-                master_heap->list[0]->y_comp,
-                scale);
-	*/
+        renderHeap (master_heap, ctr_adjusted, ren, &h_prime, player_data.getHP(), player_data.getMaxHP());
         SDL_RenderPresent(ren);
 	master_heap = h_prime;
         ctr ++;
     }
     ind = (master_heap->size - 1);
 
-    /* Now recursively delete all nodes in the entity list */
     for (; ind > 0; ind --) {
         SDL_DestroyTexture(master_heap->list[ind]->head_anim->visual);
         free(master_heap->list[ind]->head_anim);
@@ -425,6 +403,7 @@ int main (int argc, char** argv) {
 
     free(master_heap->list);
     free(master_heap);
+    IMG_Quit();
     SDL_DestroyRenderer(ren);
     SDL_DestroyWindow(win);
     SDL_Quit();
@@ -436,9 +415,17 @@ void logSDLError(std::ostream &os, const std::string &message) {
 }
 
 SDL_Texture *loadTextureFromPNG(const std::string &file, SDL_Renderer *ren) {
-    const char *mod = "rb";
+    int flag = IMG_INIT_PNG;
+    if (IMG_Init(IMG_INIT_PNG)!=flag) {
+        logSDLError(std::cout, "SDL_image IMG_Init - from inner function\n");
+        return NULL;
+    }
+    const char *mod = "r+b";
     SDL_Texture *texture = NULL;
     SDL_RWops *rwop = SDL_RWFromFile(file.c_str(), mod);
+    if (rwop == NULL) {
+        printf("Error in SDL_RWFromFile()...\ncould not load %s", file.c_str());
+    }
     SDL_Surface *loadedImage = IMG_LoadPNG_RW(rwop);
     if (loadedImage != NULL) {
         texture = SDL_CreateTextureFromSurface (ren, loadedImage);
@@ -700,7 +687,8 @@ void deleteHeap (heap *tbd) {
     }
 }
 
-void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend, heap **used) {
+void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend,
+		 heap **used, unsigned int hp, unsigned int max) {
     /* Remember: we want to preserve the heap invariant */
     /* Also: after removing nodes from the first heap "h",
      * add them into the "used" heap, which will be used 
@@ -722,6 +710,25 @@ void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend, heap **used) {
         x_pos = nextRoot->x_comp;
         y_pos = nextRoot->y_comp;
         renderTexture(frame_texture, rend, x_pos, y_pos);
+        if (strcmp(nextRoot->id, "health_base_bg_white.png") == 0) {
+            /* yup - this  is the health bar.
+	     * We want to process it in a unique way. */
+            int start_bars_ind = (x_pos+125);
+            int width, height, upper_bound;
+            float factor = (float) ((float) (hp) / max);
+/*          printf("scale factor is %.6f, ", factor);*/
+            SDL_QueryTexture(frame_texture, NULL, NULL, &width, &height);
+            upper_bound = ((factor * (width - 125)) + 1) + 125;
+/*	    printf("where the upper_bound becomes %d\n", upper_bound);*/
+            SDL_SetRenderDrawColor(rend, 246, 142, 86, 255);
+            SDL_Rect filled;
+            filled.x = x_pos+125;
+            filled.y = y_pos;
+            filled.w = (upper_bound - start_bars_ind);
+            filled.h = height;
+            SDL_RenderFillRect(rend, &filled);
+            SDL_RenderDrawRect(rend, &filled);
+        }
         deleteEntity (h, nextRoot);
         addToHeap (used, nextRoot);
     }
