@@ -1,7 +1,7 @@
 /* Vincent Cozzo                         */
-/* A test for generalizing the movement capabilities,		*/
-/* With the eventual goal of rendering any general background	*/
-/*  engine_heap.cpp : the heap implementation			*/
+/* A test for generalizing the movement capabilities,                */
+/* With the eventual goal of rendering any general background        */
+/*  engine_heap.cpp : the heap implementation                        */
 
 #include <iostream>
 #include <SDL2/SDL.h>
@@ -28,7 +28,7 @@ int main (int argc, char** argv) {
     int flag = IMG_INIT_PNG;
     if (IMG_Init(IMG_INIT_PNG)!=flag) {
         logSDLError(std::cout, "SDL_image IMG_Init");
-	return 1;
+        return 1;
     }
     if (TTF_Init()) {
         logSDLError (std::cout, "TTF_Init");
@@ -63,7 +63,7 @@ int main (int argc, char** argv) {
 
 /* We will need a game state and background number, for general
  *   background loading */
-    unsigned int /*game_state = 11,*/ bg_num = 100;
+    unsigned int game_state = 20, bg_num = 100;
 
     const std::string path = "../../res/";
     int ind=0, path_len=path.size();
@@ -78,15 +78,6 @@ int main (int argc, char** argv) {
     int found = 0;
 
     const char user_name[MAX_LEN] = "player_username";
-/*    user_name[0] = 'm';
-    user_name[1] = '_';
-    user_name[2] = 'p';
-    user_name[3] = 'l';
-    user_name[4] = 'a';
-    user_name[5] = 'y';
-    user_name[6] = 'e';
-    user_name[7] = 'r';
-    user_name[8] = '\0';*/
     /* Set the basic, default data for the player here. */
     /* Player will always be the first entity. */
     animation *player_frames = (animation *) malloc (sizeof(animation));
@@ -101,16 +92,17 @@ int main (int argc, char** argv) {
     player_graphical->num_frames = 1;
     player_graphical->priority = 100;
 
-    Actor player_data = Actor(6, 10, 1, 1, 499);
+    Actor player_data = Actor(31, 90, 1, 1, 499);
+    bag *inventory = (bag *) malloc (sizeof(bag));
 
     int set_ind;
     Entity **entity_list = (Entity **) malloc (16*sizeof(Entity *));
     if (entity_list == NULL) {
         printf("Evident failure in allocating memory for the entity list.\n");
-	free (player_graphical);
-	free (player_frames);
-	SDL_DestroyTexture (bgTex);
-	SDL_DestroyTexture (playerTex);
+        free (player_graphical);
+        free (player_frames);
+        SDL_DestroyTexture (bgTex);
+        SDL_DestroyTexture (playerTex);
         SDL_DestroyWindow (win);
         SDL_Quit();
         return 1;
@@ -137,7 +129,11 @@ int main (int argc, char** argv) {
     master_heap->max_size = 16;
 /*    printf("DEBUG msg (can ignore now): Allocated the master heap\n");*/
 
-/* Invocation of the general solution here:
+/* NOTE: DO NOT DELETE:
+ * Sometime we might want a more general solution for updating the map_matrix
+ * For isntance, when the player leaves the screen and 
+ * the window loads a new screen, the map_matrix must be updated completely!
+ * Keep note of this, and we'll develop a soltuion later on.
    map_matrix = getMapFromBG(bg);
  * or perhaps:
    adjustMapFromBG(bg, map_matrix);
@@ -193,7 +189,8 @@ int main (int argc, char** argv) {
                 ind ++;
             }
             if (ind+3 >= MAX_LEN) {
-                printf("ERR: File name is too long.\nWe've identified the file for background %s\n", pngName);
+                printf("ERR: File name is too long.\nWe've identified "\
+                       "the file for background %s\n", pngName);
                 return -1;
             }
             pngFileName[ind] = '.';
@@ -318,8 +315,9 @@ int main (int argc, char** argv) {
      * the player object entity is renderred. */
     int x_coord, y_coord, playerWidth, playerHeight;
     SDL_QueryTexture(player_graphical->head_anim->visual,
-		    NULL, NULL, &playerWidth, &playerHeight);
+                     NULL, NULL, &playerWidth, &playerHeight);
     int speed = 2;
+    bool show_inventory = false;
     SDL_Event ev;
     bool open = true/*, iteration = 0*/;
 /*    float scale = 2.0f;*/
@@ -348,9 +346,10 @@ int main (int argc, char** argv) {
                 } else if (ev.key.keysym.sym == SDLK_a) {
                     if (map_matrix[y_coord][x_coord - speed] == 0) {
                         player_graphical->x_comp -= speed;
-		    } else {
-                        printf("map_matrix[y_coord][x_coord-speed] = map_matrix[%d][%d]=1\n", y_coord, x_coord-speed);
-		    }
+                    } else {
+                        printf("map_matrix[y_coord][x_coord-speed] = map_m"\
+                               "atrix[%d][%d]=1\n", y_coord, x_coord-speed);
+                    }
                 } else if (ev.key.keysym.sym == SDLK_w) {
                     if (map_matrix[y_coord - speed][x_coord] == 0) {
                         player_graphical->y_comp -= speed;
@@ -368,7 +367,22 @@ int main (int argc, char** argv) {
                 } else if ((ev.key.keysym.sym == SDLK_x) || (ev.key.keysym.sym == SDLK_q)) {
                 /* Allow exit on X key or Q key: */
                     open = false;
+/* The following case in development - where the player presses enter,
+ * to interact with another entity.*/
+/*                } else if (ev.key.keysym.sym == SDLK_RETURN) {*/
+/*                    checkAction(player_data, map_matrix);*/
+                } else if (ev.key.keysym.sym == SDLK_i) {
+                    /* Find out if the inventory needs to be 
+                     * opened or closed... adjust game_state. */
+                    if ((game_state % 4) == 0)  {
+                        game_state ++;
+                        show_inventory = true;
+                    } else if ((game_state % 4) == 1) {
+                        game_state --;
+                        show_inventory = false;
+                    }
                 }
+
                 /* Allow player to loop around in the x axis direction*/
                 if (player_graphical->x_comp < 0) {
                     player_graphical->x_comp += WIN_WIDTH;
@@ -378,19 +392,29 @@ int main (int argc, char** argv) {
         }
         SDL_RenderClear(ren);
 
-        /* A single hard-coded texture being renderred */
-        /* This is of  course the background texture.	*/
+        /* A single hard-coded texture being renderred  */
+        /* This is of  course the background texture.        */
         renderTexture(bgTex, ren, 0, 0);
 
         /* Now, to render all the proper textures of each entity.*/
         unsigned int ctr_adjusted = ctr % 5;
-        if (ctr % 3000000 == 0) {
+        if ((ctr % 10000) == 0) {
             ctr_adjusted ++;
             ctr_adjusted %= 5;
+            printf("Just healed another 10 HP!\n");
+            player_data.gainHP (10);
+        } else {
+            if (((ctr % 30) == 0)) {
+/*                printf("%u frames passed\n", ctr);*/
+            }
         }
+
         renderHeap (master_heap, ctr_adjusted, ren, &h_prime, player_data.getHP(), player_data.getMaxHP());
+        if (show_inventory) {
+            displayInventory(ren, inventory);
+        }
         SDL_RenderPresent(ren);
-	master_heap = h_prime;
+        master_heap = h_prime;
         ctr ++;
     }
     ind = (master_heap->size - 1);
@@ -401,6 +425,7 @@ int main (int argc, char** argv) {
         free(master_heap->list[ind]);
     }
 
+    free(inventory);
     free(master_heap->list);
     free(master_heap);
     IMG_Quit();
@@ -461,6 +486,14 @@ void renderTextureFactor (SDL_Texture *texture, SDL_Renderer *ren, int x, int y,
     SDL_RenderCopy(ren, texture, NULL, &destination);
 }
 
+/* Conerts a reference number (directly corresponding to 
+ * a background texture) to the string associated with it.*/
+/* In the future, the idea is, we could easily add new 'cases'
+ * and strings to return. 
+ * Perhaps this is only a short-run solution (let me know if
+ * you have a better system) but this works for now.
+ * Note: an added benefit could be the ease in switching 
+ * background textures (see GoogleDoc). - VC */
 const char* getBGStringFromNum (unsigned int ref_num) {
     switch (ref_num) {
         case 99: return "plains_fort.png\0"; break;
@@ -501,8 +534,8 @@ void deleteEntity (heap *head, Entity *addr) {
         if (head->list[ind] == addr) {
             int update_ind = ind;
             head->list[update_ind] = head->list[head->size - 1];
-	    head->list[head->size - 1] = NULL;
-	    head->size --;
+            head->list[head->size - 1] = NULL;
+            head->size --;
 /*            deleteAnimationFrames(head->list[ind]->head_anim,
                                   head->list[ind]->num_frames);*/
 /*            SDL_DestroyTexture(head->list[ind]->head_anim->visual);*/
@@ -526,9 +559,9 @@ void deleteEntity (heap *head, Entity *addr) {
                 } else {
                     right_pri = MAX_PRI_VAL;
                 }
-		/* Now cover all possible cases of the values of 
-		 * these priorities. ... */
-		if ((left_pri <= right_pri) && 
+                /* Now cover all possible cases of the values of 
+                 * these priorities. ... */
+                if ((left_pri <= right_pri) && 
                     (left_pri < head->list[update_ind]->priority)) {
                     /* Swap left with this current node */
                     Entity *tmp = head->list[update_ind];
@@ -544,11 +577,11 @@ void deleteEntity (heap *head, Entity *addr) {
                     update_ind = right_ind;
                 } else {
                     /* no-op, we're at a step where,
-		     * in a mathematically provable sense,
-		     * we must be at a satisfactory state,
-		     * one in which the invariant has been preserved. */
+                     * in a mathematically provable sense,
+                     * we must be at a satisfactory state,
+                     * one in which the invariant has been preserved. */
                     update_ind = head->size;
-		}
+                }
             }
         }
     }
@@ -601,7 +634,7 @@ void addAnimation (Entity *subject, SDL_Texture *tba) {
  * the necessary data fields.*/
 /* This is where entities are actually allocated.*/
 Entity *makeEntity (SDL_Texture *base_pic, char *label,
-               	    int x, int y, int frames, int pri) {
+                    int x, int y, int frames, int pri) {
     /* First, initialize the animation structure */
     animation *base = (animation *) malloc (sizeof(animation));
     base->visual = base_pic;
@@ -618,6 +651,9 @@ Entity *makeEntity (SDL_Texture *base_pic, char *label,
     return result;
 }
 
+/* Will take a pointer to a pointer to a heap,
+ * and initialize that heap (the pointer then will point
+ * to a valid heap * pointer, one that is not NULL. */
 void initHeap (heap **tbr/*, Entity *tba*/) {
     int initInd = 0;
     Entity **eList = (Entity **) malloc (16*sizeof(Entity *));
@@ -632,6 +668,12 @@ void initHeap (heap **tbr/*, Entity *tba*/) {
     *tbr = result;
 }
 
+/* Add a specific Entity structure to this heap.
+ * Precondition: tba is a non-null Entity constructed
+ * through the makeEntity() function.
+ * Postcondition: h  will point to a valid, non-NULL heap pointer
+ * that will include tba (to be added) in its list of entities.
+ * (Of course, the size will also be adjusted as necessary) */
 void addToHeap (heap **h, Entity *tba) {
     if (*h ==  NULL) {
         initHeap(h/*, tba*/);
@@ -655,23 +697,27 @@ void addToHeap (heap **h, Entity *tba) {
         index = parent_ind;
     }
     /* Invaraint is now preserved. */
-    /* an return now. */
+    /* can return now. */
 }
 
+/* Increments the size of a fixed heap structure, given
+ * by the parameter, a non-NULL heap pointer. */
 heap *increment_size (heap *h) {
     h->size = (h->size + 1);
     if ((h->size) == (h->max_size)) {
         Entity **rev_list = (Entity **) malloc ((2*h->max_size)*sizeof(Entity *));
-	memcpy(rev_list, h->list, (h->max_size)*sizeof(Entity *));
+        memcpy(rev_list, h->list, (h->max_size)*sizeof(Entity *));
         heap *result = (heap *) malloc (sizeof(heap));
-	result->list = rev_list;
-	deleteHeap (h);
-	return result;
+        result->list = rev_list;
+        deleteHeap (h);
+        return result;
     } else {
         return h;
     }
 }
 
+/* Deletes (de-allocates all assocaited memory) a heap
+ * given by a general heap pointer tbd (to be deleted) */
 void deleteHeap (heap *tbd) {
     if (tbd == NULL) {
         return;
@@ -680,15 +726,21 @@ void deleteHeap (heap *tbd) {
         for (; ind < (tbd->size); ind ++) {
             free (tbd->list[ind]);
             tbd->list[ind] = NULL;
-	}
+        }
         free(tbd->list);
-	tbd->list = NULL;
-	free(tbd);
+        tbd->list = NULL;
+        free(tbd);
     }
 }
 
+/* General function for rendering the total contents of the entity heap
+ * at a given time (called witin the game loop. 
+ * Preconditions:
+ *     h must be a non-NULL heap pointer.
+ *     rend must be a non-NULL Renderer pointer.
+ * Postcondition: will render all entities in the heap. */
 void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend,
-		 heap **used, unsigned int hp, unsigned int max) {
+                 heap **used, unsigned int hp, unsigned int max) {
     /* Remember: we want to preserve the heap invariant */
     /* Also: after removing nodes from the first heap "h",
      * add them into the "used" heap, which will be used 
@@ -712,19 +764,19 @@ void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend,
         renderTexture(frame_texture, rend, x_pos, y_pos);
         if (strcmp(nextRoot->id, "health_base_bg_white.png") == 0) {
             /* yup - this  is the health bar.
-	     * We want to process it in a unique way. */
+             * We want to process it in a unique way. */
+            /* Specificaally, we fill a rectangle at the appropriate
+             * width to model the palyer's current HP ratio. */
             int start_bars_ind = (x_pos+125);
             int width, height, upper_bound;
             float factor = (float) ((float) (hp) / max);
-/*          printf("scale factor is %.6f, ", factor);*/
             SDL_QueryTexture(frame_texture, NULL, NULL, &width, &height);
             upper_bound = ((factor * (width - 125)) + 1) + 125;
-/*	    printf("where the upper_bound becomes %d\n", upper_bound);*/
             SDL_SetRenderDrawColor(rend, 246, 142, 86, 255);
             SDL_Rect filled;
             filled.x = x_pos+125;
             filled.y = y_pos;
-            filled.w = (upper_bound - start_bars_ind);
+            filled.w = (upper_bound - start_bars_ind) + 1;
             filled.h = height;
             SDL_RenderFillRect(rend, &filled);
             SDL_RenderDrawRect(rend, &filled);
@@ -732,4 +784,25 @@ void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend,
         deleteEntity (h, nextRoot);
         addToHeap (used, nextRoot);
     }
+}
+
+/* Precondition: ren and items are non-NULL pointers.
+ * Postcondition: will render a list of each item in the inventory*/
+void displayInventory (SDL_Renderer *ren, bag *items) {
+    /* First, generate a gray overlay, over everything rendered so far. */
+    SDL_SetRenderDrawColor(ren, 200, 205, 220, 199);
+    SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_BLEND);
+    SDL_Rect filled;
+    filled.x = 5;
+    filled.y = 20;
+    filled.w = (WIN_WIDTH - (2*filled.x));
+    filled.h = WIN_HEIGHT - filled.y;
+    SDL_RenderFillRect(ren, &filled);
+    SDL_RenderDrawRect(ren, &filled);
+
+    /* Next: deal directly with the bag.
+     * Um. We don't know the design here yet, so 
+     * we'll finish this function later.*/
+
+    /** FUNCTION UNDER CONSTRUCTION **/
 }

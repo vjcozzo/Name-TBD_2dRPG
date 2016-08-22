@@ -60,6 +60,16 @@ class Actor {
 */
 };
 
+struct bag {
+    /* Actual contents depend on how we store the inventory
+     * Possibilities:
+       *Dense_search_tree (Sorted, can search efficiently)
+       *Heap (ordered based on each object's weight?)
+       *Array (if we're limiting contents based on number)
+     */
+     unsigned int size;
+};
+
 struct animation {
     SDL_Texture *visual;
     animation *next;
@@ -91,7 +101,9 @@ void initHeap (heap **h);
 void addToHeap (heap **h, Entity *tba);
 heap *increment_size (heap *h);
 void deleteHeap (heap *h);
-void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend, heap **used, unsigned int hp, unsigned int max);
+void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend,
+		 heap **used, unsigned int hp, unsigned int max);
 Entity *makeEntity (SDL_Texture *base_pic, char *label, int x, int y, int frames, int pri);
+void displayInventory (SDL_Renderer *ren, bag *items);
 
 /*#endif    */
