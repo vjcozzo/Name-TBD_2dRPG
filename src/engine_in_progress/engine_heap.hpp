@@ -1,6 +1,7 @@
 /*#ifndef "general_engine.h"*/
 /*#define "general_engine.h"*/
 #define MAX_LEN 64
+#define MAX_INV 32
 
 /* Note: this would have been called "Player"; however,
  * I would not  be surprised if we wanted to use
@@ -70,8 +71,8 @@ struct item {
      * from the dense search tree (the inventory) */
     animation *anim;
     std::string id;
-    item *left, *right;
-    unsigned int weight, occurrence;
+/*    item *left, *right;*/
+    unsigned int weight/*, occurrence*/;
 };
 
 struct bag {
@@ -81,7 +82,8 @@ struct bag {
        *Heap (ordered based on each object's weight?)
        *Array (if we're limiting contents based on number)
      */
-    item *root;
+	/* This implementation: An Array. */
+    item *inv[MAX_INV];
     unsigned int size;
 };
 
@@ -117,6 +119,7 @@ Entity *makeEntity (SDL_Texture *base_pic, char *label, int x, int y, int frames
 void displayInventory (SDL_Renderer *ren, bag *items);
 int showNewBackground (int bg_num, heap *ents, SDL_Renderer *ren, int **map, SDL_Texture **bgTex);
 void clearMap (int **map_ptr, int horiz);
+void addItem (bag *total, item *tba);
 /*
 void deleteRecursive (item *elist);
 void addEntity (item** elist, SDL_Texture *texture, char* id, int x_pos, int y_pos);

@@ -9,8 +9,11 @@
 #include <SDL2/SDL_mixer.h>
 #include <SDL2/SDL_ttf.h>
 #include <string.h>
+#include <string>
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "engine_heap.hpp"
 
 #define N 200
@@ -93,6 +96,7 @@ int main (int argc, char** argv) {
 
     Actor player_data = Actor(31, 90, 1, 1, 499);
     bag *inventory = (bag *) malloc (sizeof(bag));
+    inventory->size = 0;
 
     int set_ind;
     Entity **entity_list = (Entity **) malloc (16*sizeof(Entity *));
@@ -217,7 +221,7 @@ int main (int argc, char** argv) {
                 } else if (ev.key.keysym.sym == SDLK_RETURN) {
 /*                    checkAction(player_data, map_matrix);*/
                       printf ("You've pressed the ENTER button. Case is in development.\n");
-                } else if (ev.key.keysym.sym == SDLK_i) {
+                } else if (ev.key.keysym.sym == SDLK_e) {
                     /* Find out if the inventory needs to be 
                      * opened or closed... adjust game_state. */
                     if ((game_state % 4) == 0)  {
@@ -230,17 +234,29 @@ int main (int argc, char** argv) {
                 }
 
                 /* Allow player to loop around in the x axis direction*/
-		/* Note: in this current implementation, this only works
-		 * going in the rightward direction...
-		 * Obviously, this will not be the final implementation.
-		 * After all, we want the player to be able to go to 
-		 * different screens by moving around! - VC */
+                /* Note: in this current implementation, this only works
+                 * going in the rightward direction...
+                 * Obviously, this will not be the final implementation.
+                 * After all, we want the player to be able to go to 
+                 * different screens by moving around! - VC */
                 if (x_coord < 0) {
-                    player_graphical->x_comp += WIN_WIDTH;
+                    int numEntities=(master_heap->size), deleteInd=numEntities-1;
+                    int *mapNotReadOnly = map_matrix[0];
+                    bg_num --;
+                    printf("msg: NOW CHANGING THE BACKGROUND (id now %d)\n", bg_num);
+                    /* First, delete all entities other than the player entity*/
+                    for (; deleteInd >= 0; deleteInd --) {
+                        if (master_heap->list[deleteInd] != player_graphical) {
+                            deleteEntity(master_heap, master_heap->list[deleteInd]);
+                        }
+                    }
+                    /* Finally, load the new background. */
+                    showNewBackground(bg_num, master_heap, ren, &mapNotReadOnly, &bgTex);
+                    player_graphical->x_comp = WIN_WIDTH-70;
                 } 
                 if (x_coord > WIN_WIDTH) {
                     int numEntities=(master_heap->size), deleteInd=numEntities-1;
-		    int *mapNotReadOnly = map_matrix[0];
+                    int *mapNotReadOnly = map_matrix[0];
                     bg_num ++;
                     printf("NOW CHANGING THE BACKGROUND (id now %d)\n", bg_num);
                     /* First, delete all entities other than the player entity*/
@@ -251,8 +267,8 @@ int main (int argc, char** argv) {
                     }
                     /* Finally, load the new background. */
                     showNewBackground(bg_num, master_heap, ren, &mapNotReadOnly, &bgTex);
-		    player_graphical->x_comp = 25;
-		}
+                    player_graphical->x_comp = 40;
+                }
                 player_graphical->x_comp %= WIN_WIDTH;
             }
         }
@@ -265,6 +281,22 @@ int main (int argc, char** argv) {
             ctr_adjusted %= 5;
             printf("Just healed another 10 HP!\n");
             player_data.gainHP (10);
+
+            int nextInd = (ctr / 10000) - 1;
+            if (nextInd < 8) {
+                std::stringstream temporaryStorage;
+                temporaryStorage << nextInd;
+                std::string nextIndStr = temporaryStorage.str();
+                printf ("%s is the nextIndStr this time.\n", nextIndStr.c_str());
+                animation *comp = (animation *) malloc(sizeof(animation));
+                comp->visual = loadTextureFromPNG(path + "test" + nextIndStr + ".png", ren);
+                comp->next = NULL;
+                item *nextItem = (item *) malloc(sizeof(item));
+                nextItem->anim = comp;
+/*            nextItem->occurrence = 1;*/
+                nextItem->weight = 5;
+                addItem(inventory, nextItem);
+            }
         } else {
             if (((ctr % 30) == 0)) {
 /*                printf("%u frames passed\n", ctr);*/
@@ -281,10 +313,17 @@ int main (int argc, char** argv) {
     }
     ind = (master_heap->size - 1);
 
-    for (; ind > 0; ind --) {
+    for (; ind >= 0; ind --) {
         SDL_DestroyTexture(master_heap->list[ind]->head_anim->visual);
         free(master_heap->list[ind]->head_anim);
         free(master_heap->list[ind]);
+    }
+
+    ind = (inventory->size - 1);
+    for (; ind >= 0; ind --) {
+        SDL_DestroyTexture(inventory->inv[ind]->anim->visual);
+        free(inventory->inv[ind]->anim);
+        free(inventory->inv[ind]);
     }
 
     free(inventory);
@@ -663,9 +702,28 @@ void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend,
     }
 }
 
+void addItem (bag *items, item *tba) {
+    if (items == NULL) {
+        printf("ERR: BAG IS EMPTY. See where you call addItem() to debug.\n");
+        return;
+    }
+    int num_items = items->size;
+    if ((num_items < 0) || (num_items > MAX_INV)) {
+        /*****/
+        printf("ERR: BAG SIZE INVALID. See where the item inventory is manipulated in order to ebug.\n");
+    } else if (items->size == MAX_INV) {
+        printf("Cannot add to bag -- bag is full. Returning.\n");
+    } else {
+        /*****/
+        items->inv[num_items] = tba;
+        items->size ++;
+    }
+}
+
 /* Precondition: ren and items are non-NULL pointers.
  * Postcondition: will render a list of each item in the inventory*/
 void displayInventory (SDL_Renderer *ren, bag *items) {
+    unsigned int indi;
     /* First, generate a gray overlay, over everything rendered so far. */
     SDL_SetRenderDrawColor(ren, 200, 205, 220, 199);
     SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_BLEND);
@@ -682,6 +740,22 @@ void displayInventory (SDL_Renderer *ren, bag *items) {
      * we'll finish this function later.*/
 
     /** FUNCTION UNDER CONSTRUCTION **/
+
+    /* The following variables represent the number of items that will
+     * be displayed - for each row (X) and for each column (Y) */
+    int modX = 8, modY = 8;
+
+    /* storing the width and height values for each icon displayed: */
+    int indivWidth = (WIN_WIDTH / modX);
+    int indivHeight = (WIN_HEIGHT / modY);
+
+    for (indi = 0; indi < (items->size); indi ++) {
+        int x_pos, y_pos;
+        x_pos = ((indi % modX)*(indivWidth)) + 5;
+        y_pos = ((indi / modY)*(indivHeight)) + 20;
+        SDL_Texture *nextItemText = (items->inv[indi]->anim->visual);
+        renderTexture(nextItemText, ren, x_pos, y_pos);
+    }
 }
 
 /* THE FOLLOWING IS **REALLY** UNDER CONSTRUCTION-----
@@ -950,13 +1024,13 @@ int showNewBackground (int bg_num, heap *entity_heap, SDL_Renderer *ren, int **m
                             = loadTextureFromPNG(nextPngNameWithPath, ren);
                 Entity *nextEnt = makeEntity (next_texture, nextPngName,
                                 ent_initX, ent_initY, frame_count, entPri);
-		if (ind == 0) {
+                if (ind == 0) {
                     if (bgText == NULL) {
                         logSDLError (std::cout, "background texture pointer null. See showNewBackground().");
                     } else {
                         *bgText = next_texture;
-		    }
-		}
+                    }
+                }
                 indf = 1;
                 if (frame_count > 1) {
                     while (((indf < frame_count)) &&
@@ -1027,11 +1101,11 @@ void clearMap (int **map, int horizon) {
     for (indrow = 0; indrow < horizon; indrow ++) {
         for (indcol = 0; indcol < WIN_WIDTH; indcol ++) {
             *((*map) + (WIN_WIDTH*indrow) + (indcol)) = 1;
-	}
+        }
     }
     for (; indrow < WIN_HEIGHT; indrow ++) {
         for (indcol = 0; indcol < WIN_WIDTH; indcol ++) {
             *((*map) + (WIN_WIDTH*indrow) + (indcol)) = 0;
-	}
+        }
     }
 }
