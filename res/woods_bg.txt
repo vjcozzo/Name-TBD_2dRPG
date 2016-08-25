@@ -1,3 +1,4 @@
+woods_bg.png, 0, 0, 9000, 9000, 1, 0
 enemy-bat-0.png, 367, 79, 377, 89, 2, 5
 enemy-bat-1.png
 enemy-bat-0.png, 343, 68, 353, 78, 2, 6

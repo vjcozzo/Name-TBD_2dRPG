@@ -66,16 +66,15 @@ int main (int argc, char** argv) {
     unsigned int game_state = 20, bg_num = 100;
 
     const std::string path = "../../res/";
-    int ind=0, path_len=path.size();
-    const char *data = "bg_data.txt";
-    const char *bg = getBGStringFromNum(bg_num);
+    int ind=0;
 
-/*    SDL_Texture *playerLoc = loadTextureFromFont();*/
-    SDL_Texture *bgTex = loadTextureFromPNG(path + "" + bg, ren);
+    /* A texture for font-printing may end up useful.
+     * The bgTex, howeverm is now obsolete. Hence, 
+     * it will be commented or removed later.*/
+/*    SDL_Texture *playerHP = loadTextureFromFont();*/
+    SDL_Texture *bgTex = NULL;
     SDL_Texture *playerTex = loadTextureFromPNG
                                  (path + "player_doubleSize.png", ren);
-
-    int found = 0;
 
     const char user_name[MAX_LEN] = "player_username";
     /* Set the basic, default data for the player here. */
@@ -129,7 +128,7 @@ int main (int argc, char** argv) {
     master_heap->max_size = 16;
 /*    printf("DEBUG msg (can ignore now): Allocated the master heap\n");*/
 
-/* NOTE: DO NOT DELETE:
+/* DO NOT DELETE THIS NOTE::
  * Sometime we might want a more general solution for updating the map_matrix
  * For isntance, when the player leaves the screen and 
  * the window loads a new screen, the map_matrix must be updated completely!
@@ -138,171 +137,16 @@ int main (int argc, char** argv) {
  * or perhaps:
    adjustMapFromBG(bg, map_matrix);
    * or something of the sort.
+   * -VC
  * */
     for (indr = 0; indr <= 271; indr ++) {
         for (indc = 0; indc < WIN_WIDTH; indc ++) {
             map_matrix[indr][indc] = 1;
         }
     }
-    FILE *database = fopen(data, "r");
-    char whole_line[4*MAX_LEN] = {'\0'};
-    while ((!found) && fgets(whole_line, 4*MAX_LEN + 1, database)) {
-        int initX, initY, subtraction;
-        char pngName[MAX_LEN] = {'\0'};
-        char excludeFirst[MAX_LEN] = {'\0'};
-        indc = 0;
-        while (whole_line[indc] != ',') {
-            pngName[indc] = whole_line[indc];
-            indc ++;
-        }
-        indc ++;
-        subtraction = indc;
-        while ((whole_line[indc] != '\n') && (indc < MAX_LEN)) {
-            excludeFirst[indc - subtraction] = whole_line[indc];
-            indc ++;
-        }
-        sscanf(excludeFirst, "%d, %d", &initX, &initY);
-/*        printf("Debug: just read from the line in the database\n");
-        printf("%d\n", initX);
-        printf("%d\n", initY);
-        printf("Value of bg (background file name): %s\n", bg);
-        printf("Value of pngName (background file name as read from database: %s\n", pngName);
-        printf("About to compare these to each other\n");*/
 
-        if (strcmp(bg, pngName)) {
-            int t;
-            for (t = 0; t < indc; t ++) {
-                pngName[t] = '\0';
-            }
-        } else {
-            char pngFileName[MAX_LEN] = {'\0'};
-            ind = 0;
-            int cap = strlen(whole_line);
-/*            printf("Found our png file in the master database!\n");*/
-            while (ind <= cap) {
-                whole_line[ind] = '\0';
-                ind ++;
-            }
-            ind = 0;
-            while (pngName[ind] != '.') {
-                pngFileName[ind] = pngName[ind];
-                ind ++;
-            }
-            if (ind+3 >= MAX_LEN) {
-                printf("ERR: File name is too long.\nWe've identified "\
-                       "the file for background %s\n", pngName);
-                return -1;
-            }
-            pngFileName[ind] = '.';
-            pngFileName[ind+1] = 't';
-            pngFileName[ind+2] = 'x';
-            pngFileName[ind+3] = 't';
-            FILE* specific_entities_list = fopen(pngFileName, "r");
-            ind = 1;
-            while (fgets(whole_line, 4*MAX_LEN+1, specific_entities_list)) {
-                int width, height, indf, frame_count=1;
-                char postLine[MAX_LEN] = {'\0'};
-                char nextPngName[MAX_LEN] = {'\0'};
-                char nextPngNameWithPath[MAX_LEN] = {'\0'};
-                int ent_initX, ent_initY, entPri,
-                    floorX, floorY;
-                for (indc = 0; indc < path_len; indc ++) {
-                    nextPngNameWithPath[indc] = path[indc];
-                }
-/*                printf("Debug msg: %s", whole_line);*/
-                while ((whole_line[indc - path_len] != ',') &&
-                       (whole_line[indc - path_len] != '\n')) {
-                    nextPngNameWithPath[indc] = whole_line[indc - path_len];
-                    nextPngName[indc - path_len] = whole_line[indc - path_len];
-                    indc ++;
-                }
-/*                printf("Debug: Extracted the next png name.\n");*/
-/*                printf("\tIt's %s!\n", nextPngName);*/
-                indc -= path_len;
-                indc ++;
-                subtraction = indc;
-/*                printf("Now the index right after the comma is %d\n", (indc-path_len));*/
-                while ((whole_line[indc] != '\n')
-                    && (indc < MAX_LEN)) {
-                    postLine[indc-subtraction] = whole_line[indc];
-                    indc ++;
-                }
-/*                printf("Stopped at %d becuase there is a newline character there.\n", indc);*/
-                indc = 0;
-                sscanf(postLine, "%d,%d,%d,%d,%d,%d",
-                          &ent_initX, &ent_initY,
-                          &floorX, &floorY, &frame_count, &entPri);
-                SDL_Texture *next_texture 
-                             = loadTextureFromPNG(nextPngNameWithPath, ren);
-                Entity *nextEnt = makeEntity (next_texture, nextPngName,
-                                 ent_initX, ent_initY, frame_count, entPri);
-                indf = 1;
-/*                printf("reading from postline=\"%s\"\n", postLine);*/
-                if (frame_count > 1) {
-                    while (((indf < frame_count)) &&
-                        (fgets(whole_line, 4*MAX_LEN+1,
-                        specific_entities_list) != NULL)) {
-/*                        printf("Now processing animation frame %d < %d.\n",
- *                        indf, frame_count);*/
-                        sscanf(whole_line, "%s\n", nextPngName);
-                        if (nextPngName[strlen(nextPngName) - 1] == '\n') {
-                            nextPngName[strlen(nextPngName) - 1] = '\0';
-                        }
-/*                        printf("\tpng name is %s!\n\tLine identified is %s!\n", nextPngName, whole_line);*/
-                    /* NOTE: here we need to prepend
-                     * the path string
-                     * to the nextPngName
-                     * in order for the PNG to be 
-                     * identified:*/
-                        for (indc = 0;
-                        (indc < MAX_LEN) && (nextPngName[indc] != '\n');
-                                       indc ++) {
-                            nextPngNameWithPath[indc + path_len] = nextPngName[indc];
-                        }
-                        SDL_Texture *next_anim =
-                            loadTextureFromPNG(nextPngNameWithPath, ren);
-                        addAnimation(nextEnt, next_anim);
-
-                        for (indc = 0; indc < 4*MAX_LEN; indc ++) {
-                            whole_line[indc] = '\0';
-                        }
-                        for (indc = 0; indc < MAX_LEN; indc ++) {
-                            nextPngName[indc] = '\0';
-                        }
-                        for (indc = path_len; indc < MAX_LEN; indc ++) {
-                            nextPngNameWithPath[indc] = '\0';
-                        }
-                        indc ++;
-                        indf ++;
-                    }
-                }
-                SDL_QueryTexture(next_texture, NULL, NULL, &width, &height);
-/*                printf ("Debug: next texture, %s, has: \n"\
-            "\tbaseX %d, baseY %d;\n\twidth %d and height %d\n",
-                    nextPngName,
-                    floorX,
-                    floorY,
-                    width,
-                    height);*/
-                addToHeap(&master_heap, nextEnt);
-                for (indr = floorY;
-                    (indr < floorY+height) &&
-                    (indr < WIN_HEIGHT); indr ++) {
-                    for (indc = floorX;
-                        (indc < floorX+width) &&
-                        (indc < WIN_WIDTH);
-                          indc ++) {
-                        map_matrix[indr][indc] = 1;
-                    }
-                }
-                ind ++;
-            }
-            fclose(specific_entities_list);
-            found = 1;
-        }
-    }
-    fclose(database);
-
+    int *stored_ptr = map_matrix[0];
+    showNewBackground(bg_num, master_heap, ren, &stored_ptr, &bgTex);
     if ((bgTex == NULL) || (playerTex == NULL)) {
         SDL_DestroyRenderer(ren);
         SDL_DestroyWindow(win);
@@ -324,6 +168,7 @@ int main (int argc, char** argv) {
     unsigned int ctr = 1;
 
 /* ******   MAIN GAME LOOP BELOW   ****** */
+
     while (open) {
         heap *h_prime = NULL;
         /* Update coordinates: */
@@ -369,8 +214,9 @@ int main (int argc, char** argv) {
                     open = false;
 /* The following case in development - where the player presses enter,
  * to interact with another entity.*/
-/*                } else if (ev.key.keysym.sym == SDLK_RETURN) {*/
+                } else if (ev.key.keysym.sym == SDLK_RETURN) {
 /*                    checkAction(player_data, map_matrix);*/
+                      printf ("You've pressed the ENTER button. Case is in development.\n");
                 } else if (ev.key.keysym.sym == SDLK_i) {
                     /* Find out if the inventory needs to be 
                      * opened or closed... adjust game_state. */
@@ -384,17 +230,33 @@ int main (int argc, char** argv) {
                 }
 
                 /* Allow player to loop around in the x axis direction*/
-                if (player_graphical->x_comp < 0) {
+		/* Note: in this current implementation, this only works
+		 * going in the rightward direction...
+		 * Obviously, this will not be the final implementation.
+		 * After all, we want the player to be able to go to 
+		 * different screens by moving around! - VC */
+                if (x_coord < 0) {
                     player_graphical->x_comp += WIN_WIDTH;
                 } 
+                if (x_coord > WIN_WIDTH) {
+                    int numEntities=(master_heap->size), deleteInd=numEntities-1;
+		    int *mapNotReadOnly = map_matrix[0];
+                    bg_num ++;
+                    printf("NOW CHANGING THE BACKGROUND (id now %d)\n", bg_num);
+                    /* First, delete all entities other than the player entity*/
+                    for (; deleteInd >= 0; deleteInd --) {
+                        if (master_heap->list[deleteInd] != player_graphical) {
+                            deleteEntity(master_heap, master_heap->list[deleteInd]);
+                        }
+                    }
+                    /* Finally, load the new background. */
+                    showNewBackground(bg_num, master_heap, ren, &mapNotReadOnly, &bgTex);
+		    player_graphical->x_comp = 25;
+		}
                 player_graphical->x_comp %= WIN_WIDTH;
             }
         }
         SDL_RenderClear(ren);
-
-        /* A single hard-coded texture being renderred  */
-        /* This is of  course the background texture.        */
-        renderTexture(bgTex, ren, 0, 0);
 
         /* Now, to render all the proper textures of each entity.*/
         unsigned int ctr_adjusted = ctr % 5;
@@ -498,7 +360,8 @@ const char* getBGStringFromNum (unsigned int ref_num) {
     switch (ref_num) {
         case 99: return "plains_fort.png\0"; break;
         case 100: return "woods_bg.png\0"; break;
-        default: return "plains_fort.png\0"; break;
+        case 101: return "woods_bg_2.png\0"; break;
+        default: return "woods_bg.png\0"; break;
     }
     logSDLError(std::cout, "BACKGROUND REFNUM SELECTION");
     return "";
@@ -649,6 +512,20 @@ Entity *makeEntity (SDL_Texture *base_pic, char *label,
     result->num_frames = frames;
     result->priority = pri;
     return result;
+}
+
+/* Precondition: id is a non-null, valid name for the item
+ * Postcondition: will return a pointer to a newly-allocated
+ * item structure*/
+item *makeItem () {
+    /**/
+    return NULL;
+    /* Like I said, this is under major construction.
+     * I'll generate a new item structure given various parameters
+     * just give me some time to implement this. -VC
+     *
+     * Or better yet, do it yourself if you're impatient! ;)
+     * */
 }
 
 /* Will take a pointer to a pointer to a heap,
@@ -805,4 +682,356 @@ void displayInventory (SDL_Renderer *ren, bag *items) {
      * we'll finish this function later.*/
 
     /** FUNCTION UNDER CONSTRUCTION **/
+}
+
+/* THE FOLLOWING IS **REALLY** UNDER CONSTRUCTION-----
+ * FUNCTIONS have been yanked from engine_bst.cpp
+ * and I expect they will prove useful for the dense-search-tree
+ * implementation of the inventory.*/
+/*
+void deleteEntity (item *head, Entity *addr) {
+    int lastStep = 0;
+    item *aheadNode = head;
+    item *tmp = NULL;
+
+    while ((aheadNode != NULL) &&
+           (strcmp(aheadNode->info->id, addr->id))) {
+        int compare_result = strcmp (aheadNode->info->id, addr->id);
+        if (compare_result > 0) {
+            tmp = aheadNode;
+            aheadNode = aheadNode->left;
+            lastStep = 1;
+        } else if (compare_result < 0) {
+            tmp = aheadNode;
+            aheadNode = aheadNode->right;
+            lastStep = -1;
+        } else {*/
+            /* This is the Node we need to delete!! */
+/*            if (lastStep > 0) {
+                tmp->left = NULL;
+            } else *//*if (lastStep < 0) {*/
+/*                tmp->right = NULL;*/
+        /* For each of THIS deleted Node's children,*/
+        /* add them to the rest of the tree. */
+/*            addAllNodes (&head, aheadNode->left);
+            addAllNodes (&head, aheadNode->right);
+            SDL_DestroyTexture (aheadNode->info->visual);
+            free (aheadNode->info);
+            free (aheadNode);
+        }
+    }
+
+    if ((aheadNode == NULL) || (tmp == NULL)) {
+        return;
+    }
+}*/
+
+/*
+void addEntity (item** eList, SDL_Texture *texture, char *identifier, int x_pos, int y_pos) {
+    int lastStep = 0;
+    item *aheadNode = *eList;
+    item *tmp = NULL;
+
+    if ((texture == NULL) || (identifier == NULL)) {
+        printf ("Error: have tried to add an entity to the BST, where:\n");
+        if ((texture == NULL)) {
+            printf ("\tThe texture given is NULL. This is a weird error.\n");
+        }
+        else {
+            printf ("\tThe identifier is NULL. Check where you call this addEntity() fct,\n\t and then verify the Entity name.\n");
+        }
+        return;
+    }
+    while (aheadNode != NULL) {
+        if (strcmp (aheadNode->info->id, identifier) < 0) {
+            tmp = aheadNode;
+            aheadNode = aheadNode->right;
+            lastStep = -1;
+        } else {
+            tmp = aheadNode;
+            aheadNode = aheadNode->left;
+            lastStep = 1;
+        }
+    }
+
+    if (tmp == NULL) {*/
+        /* In the case that *eList (the head node location) is NULL */
+/*        Entity *head = (Entity *) malloc (sizeof (Entity));
+        head->visual = texture;
+        strcpy (head->id, identifier);
+        head->id[strlen(identifier)] = '\0';
+        head->x_comp = x_pos;
+        head->y_comp = y_pos;
+        
+        item *newNode = (item *) malloc (sizeof (item));
+        newNode->info = head;
+        newNode->left = NULL;
+        newNode->right = NULL;
+        *eList = newNode;
+        return;
+    }
+
+    Entity *newEnt = (Entity *) malloc (sizeof (Entity));
+    newEnt->visual = texture;
+    strcpy (newEnt->id, identifier);
+    newEnt->id[strlen(identifier)] = '\0';
+    newEnt->x_comp = x_pos;
+    newEnt->y_comp = y_pos;
+
+    item *newNode = (item *) malloc (sizeof(item));
+    newNode->info = newEnt;
+    newNode->left = NULL;
+    newNode->right = NULL;
+
+    if (lastStep > 0) {
+        tmp->left = newNode;
+    } else {
+        tmp->right = newNode;
+    }
+}*/
+
+/* Note: this addNode() function does no  additional
+ * dynamic memory allocation.
+ * This is a main distinction between it and the createEntity() funct.*/
+/*
+void addNode (item** eList, item *toBeAdded) {
+    int lastStep = 0;
+    item *aheadNode = *eList;
+    item *tmp = NULL;
+
+    while (aheadNode != NULL) {
+        int compare_result = strcmp (aheadNode->info->id, toBeAdded->info->id);
+        if (compare_result < 0) {
+            tmp = aheadNode;
+            aheadNode = aheadNode->right;
+            lastStep = -1;
+        } else {
+            tmp = aheadNode;
+            aheadNode = aheadNode->left;
+            lastStep = 1;
+        }
+    }
+
+    if (tmp == NULL) {*/
+    /* In the case that *eList (the head node location) is NULL */
+/*        *eList = toBeAdded;
+        return;
+    }
+
+    if (lastStep > 0) {
+        tmp->left = toBeAdded;
+*//*
+    } else*/ /*if (lastStep <= 0)*//* {
+        tmp->right = toBeAdded;
+
+    }
+}*/
+/*
+void addAllNodes (item **destination, item *source) {
+    if (destination == NULL) {
+        printf ("The source pointer is NULL. Error in addAllNodes()\n");
+        return;
+    }
+    if ((*destination) == NULL) {
+        *destination = source;
+        return;
+    } else {
+        addAllNodes (destination, source->left);
+        addAllNodes (destination, source->right);
+        addNode (destination, source);
+    }
+}*/
+/*
+void deleteRecursive (item *top) {
+    if (top == NULL) {
+        return;
+    } else {
+        deleteRecursive (top->left);
+        deleteRecursive (top->right);
+        deleteEntity (top, top->info);
+    }
+}*/
+
+/* A general function for doing most of the work originally done
+ * BEFORE the main game loop - e.g., reading default entities from files
+ * and adding them to the main entity heap.
+ *
+ * This is a very general function, because it should be called
+ * whenever the screen changes to a new background (e.g., the player
+ * moves far enough to the right to trigger a screen change).
+ *
+ * It is a work in progress.
+ * -VC
+ *  */
+int showNewBackground (int bg_num, heap *entity_heap, SDL_Renderer *ren, int **map, SDL_Texture **bgText) {
+    const std::string path = "../../res/";
+    const char *data = "bg_data.txt";
+    int ind=0, indr=0, indc=0, path_len=path.size();
+    const char *bg = getBGStringFromNum(bg_num);
+    char whole_line[4*MAX_LEN] = {'\0'};
+    bool found = false;
+
+    FILE *database = fopen(data, "r");
+    while ((!found) && fgets(whole_line, 4*MAX_LEN + 1, database)) {
+        int initX, initY, subtraction, horizon;
+        char pngName[MAX_LEN] = {'\0'};
+        char excludeFirst[MAX_LEN] = {'\0'};
+        indc = 0;
+        while (whole_line[indc] != ',') {
+            pngName[indc] = whole_line[indc];
+            indc ++;
+        }
+        indc ++;
+        subtraction = indc;
+        while ((whole_line[indc] != '\n') && (indc < MAX_LEN)) {
+            excludeFirst[indc - subtraction] = whole_line[indc];
+            indc ++;
+        }
+        sscanf(excludeFirst, "%d, %d, %d", &initX, &initY, &horizon);
+        clearMap(map, horizon);
+        if (strcmp(bg, pngName)) {
+            int t;
+            for (t = 0; t < indc; t ++) {
+                pngName[t] = '\0';
+            }
+        } else {
+            char pngFileName[MAX_LEN] = {'\0'};
+            ind = 0;
+            int cap = strlen(whole_line);
+            while (ind <= cap) {
+                whole_line[ind] = '\0';
+                ind ++;
+            }
+            ind = 0;
+            while (pngName[ind] != '.') {
+                pngFileName[ind] = pngName[ind];
+                ind ++;
+            }
+            if (ind+3 >= MAX_LEN) {
+                printf("ERR: File name is too long.\nWe've identified "\
+                       "the file for background %s\n", pngName);
+                return -1;
+            }
+            pngFileName[ind] = '.';
+            pngFileName[ind+1] = 't';
+            pngFileName[ind+2] = 'x';
+            pngFileName[ind+3] = 't';
+            FILE* specific_entities_list = fopen(pngFileName, "r");
+            ind = 0;
+            while (fgets(whole_line, 4*MAX_LEN+1, specific_entities_list)) {
+                int width, height, indf, frame_count=1;
+                char postLine[MAX_LEN] = {'\0'};
+                char nextPngName[MAX_LEN] = {'\0'};
+                char nextPngNameWithPath[MAX_LEN] = {'\0'};
+                int ent_initX, ent_initY, entPri,
+                    floorX, floorY;
+                for (indc = 0; indc < path_len; indc ++) {
+                    nextPngNameWithPath[indc] = path[indc];
+                }
+                while ((whole_line[indc - path_len] != ',') &&
+                       (whole_line[indc - path_len] != '\n')) {
+                    nextPngNameWithPath[indc] = whole_line[indc - path_len];
+                    nextPngName[indc - path_len] = whole_line[indc - path_len];
+                    indc ++;
+                }
+                indc -= path_len;
+                indc ++;
+                subtraction = indc;
+                while ((whole_line[indc] != '\n')
+                    && (indc < MAX_LEN)) {
+                    postLine[indc-subtraction] = whole_line[indc];
+                    indc ++;
+                }
+                indc = 0;
+                sscanf(postLine, "%d,%d,%d,%d,%d,%d",
+                          &ent_initX, &ent_initY,
+                          &floorX, &floorY, &frame_count, &entPri);
+                SDL_Texture *next_texture 
+                            = loadTextureFromPNG(nextPngNameWithPath, ren);
+                Entity *nextEnt = makeEntity (next_texture, nextPngName,
+                                ent_initX, ent_initY, frame_count, entPri);
+		if (ind == 0) {
+                    if (bgText == NULL) {
+                        logSDLError (std::cout, "background texture pointer null. See showNewBackground().");
+                    } else {
+                        *bgText = next_texture;
+		    }
+		}
+                indf = 1;
+                if (frame_count > 1) {
+                    while (((indf < frame_count)) &&
+                        (fgets(whole_line, 4*MAX_LEN+1,
+                        specific_entities_list) != NULL)) {
+                        sscanf(whole_line, "%s\n", nextPngName);
+                        if (nextPngName[strlen(nextPngName) - 1] == '\n') {
+                            nextPngName[strlen(nextPngName) - 1] = '\0';
+                        }
+                /* NOTE: here we need to prepend
+                 * the path string
+                 * to the nextPngName
+                 * in order for the PNG to be 
+                 * identified:*/
+                        for (indc = 0;
+                        (indc < MAX_LEN) && (nextPngName[indc] != '\n');
+                                       indc ++) {
+                            nextPngNameWithPath[indc + path_len] = nextPngName[indc];
+                        }
+                        SDL_Texture *next_anim =
+                               loadTextureFromPNG(nextPngNameWithPath, ren);
+                        addAnimation(nextEnt, next_anim);
+
+                        for (indc = 0; indc < 4*MAX_LEN; indc ++) {
+                            whole_line[indc] = '\0';
+                        }
+                        for (indc = 0; indc < MAX_LEN; indc ++) {
+                            nextPngName[indc] = '\0';
+                        }
+                        for (indc = path_len; indc < MAX_LEN; indc ++) {
+                            nextPngNameWithPath[indc] = '\0';
+                        }
+                        indc ++;
+                        indf ++;
+                    }
+                }
+                SDL_QueryTexture(next_texture, NULL, NULL, &width, &height);
+/*                printf ("Debug: next texture, %s, has: \n"\
+            "\tbaseX %d, baseY %d;\n\twidth %d and height %d\n",
+                    nextPngName,
+                    floorX,
+                    floorY,
+                    width,
+                    height);*/
+                addToHeap(&entity_heap, nextEnt);
+                for (indr = floorY;
+                    (indr < floorY+height) &&
+                    (indr < WIN_HEIGHT); indr ++) {
+                    for (indc = floorX;
+                        (indc < floorX+width) &&
+                        (indc < WIN_WIDTH);
+                          indc ++) {
+                        *((*map) + (indr*WIN_WIDTH) + indc) = 1;
+                    }
+                }
+                ind ++;
+            }
+            fclose(specific_entities_list);
+            found = true;
+        }
+    }
+    fclose(database);
+    return 0;
+}
+
+void clearMap (int **map, int horizon) {
+    int indrow, indcol;
+    for (indrow = 0; indrow < horizon; indrow ++) {
+        for (indcol = 0; indcol < WIN_WIDTH; indcol ++) {
+            *((*map) + (WIN_WIDTH*indrow) + (indcol)) = 1;
+	}
+    }
+    for (; indrow < WIN_HEIGHT; indrow ++) {
+        for (indcol = 0; indcol < WIN_WIDTH; indcol ++) {
+            *((*map) + (WIN_WIDTH*indrow) + (indcol)) = 0;
+	}
+    }
 }

@@ -1,0 +1,3 @@
+woods_bg_2.png, 0, 0, 9000, 9000, 1, 1
+health_base_bg_white.png, 5, 5, 5, 5, 1, 3
+Baiyuna_Chief.png, 373, 163, 373, 163, 1, 5

@@ -12,7 +12,6 @@ all: $(EXECUTABLES)
 clean:
 	@rm -f *.o
 	@rm -f a.out
-	@rm -f *.exe
 
 engine_heap: engine_heap.hpp engine_heap.o
 	@$(CXX) -g engine_heap.cpp -o engine_heap.exe $(LIBFLAGS)

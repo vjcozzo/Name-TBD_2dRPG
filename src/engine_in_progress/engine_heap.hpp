@@ -23,8 +23,8 @@ class Actor {
         exp = exper;
         level = nowLevel;
         toNext = toNextLev;
-        alive = 1;
-        invincible = 0;
+        alive = true;
+        invincible = false;
     }
     
     void gainHP (unsigned int amnt) {
@@ -38,7 +38,7 @@ class Actor {
             health -= amnt;
             if (health <= 0) {
                 health = 0;
-                alive = 0;
+                alive = false;
             }
 	}
     }
@@ -60,6 +60,20 @@ class Actor {
 */
 };
 
+struct animation {
+    SDL_Texture *visual;
+    animation *next;
+};
+
+struct item {
+    /* General structure for any item that can be accessed 
+     * from the dense search tree (the inventory) */
+    animation *anim;
+    std::string id;
+    item *left, *right;
+    unsigned int weight, occurrence;
+};
+
 struct bag {
     /* Actual contents depend on how we store the inventory
      * Possibilities:
@@ -67,12 +81,8 @@ struct bag {
        *Heap (ordered based on each object's weight?)
        *Array (if we're limiting contents based on number)
      */
-     unsigned int size;
-};
-
-struct animation {
-    SDL_Texture *visual;
-    animation *next;
+    item *root;
+    unsigned int size;
 };
 
 typedef struct entity {
@@ -105,5 +115,13 @@ void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend,
 		 heap **used, unsigned int hp, unsigned int max);
 Entity *makeEntity (SDL_Texture *base_pic, char *label, int x, int y, int frames, int pri);
 void displayInventory (SDL_Renderer *ren, bag *items);
-
+int showNewBackground (int bg_num, heap *ents, SDL_Renderer *ren, int **map, SDL_Texture **bgTex);
+void clearMap (int **map_ptr, int horiz);
+/*
+void deleteRecursive (item *elist);
+void addEntity (item** elist, SDL_Texture *texture, char* id, int x_pos, int y_pos);
+void addNode (item** elist, item *toBeAdded);
+void addAllNodes (item **dest, item *src);
+void renderAllTextures (item* startNode, SDL_Renderer *renderer);
+*/
 /*#endif    */
