@@ -114,7 +114,8 @@ void addToHeap (heap **h, Entity *tba);
 heap *increment_size (heap *h);
 void deleteHeap (heap *h);
 void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend,
-		 heap **used, unsigned int hp, unsigned int max);
+		 heap **used, unsigned int hp, unsigned int max,
+                 SDL_Texture *num, SDL_Texture *den);
 Entity *makeEntity (SDL_Texture *base_pic, char *label, int x, int y, int frames, int pri);
 void displayInventory (SDL_Renderer *ren, bag *items);
 int showNewBackground (int bg_num, heap *ents, SDL_Renderer *ren, int **map, SDL_Texture **bgTex);

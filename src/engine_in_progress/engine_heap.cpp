@@ -130,19 +130,6 @@ int main (int argc, char** argv) {
     master_heap->list = entity_list;
     master_heap->size = 1;
     master_heap->max_size = 16;
-/*    printf("DEBUG msg (can ignore now): Allocated the master heap\n");*/
-
-/* DO NOT DELETE THIS NOTE::
- * Sometime we might want a more general solution for updating the map_matrix
- * For isntance, when the player leaves the screen and 
- * the window loads a new screen, the map_matrix must be updated completely!
- * Keep note of this, and we'll develop a soltuion later on.
-   map_matrix = getMapFromBG(bg);
- * or perhaps:
-   adjustMapFromBG(bg, map_matrix);
-   * or something of the sort.
-   * -VC
- * */
     for (indr = 0; indr <= 271; indr ++) {
         for (indc = 0; indc < WIN_WIDTH; indc ++) {
             map_matrix[indr][indc] = 1;
@@ -171,6 +158,15 @@ int main (int argc, char** argv) {
 /*    float scale = 2.0f;*/
     unsigned int ctr = 1;
 
+    std::string fontName = "fonts/Ubuntu-M_font.ttf";
+    SDL_Color textColor = {0, 0, 0, 255};
+
+    std::stringstream numer, denom;
+    numer << player_data.getHP();
+    denom << player_data.getMaxHP();
+    SDL_Texture *hp_num = renderText(numer.str(), path + fontName, textColor, 16, ren);
+    SDL_Texture *hp_denom = renderText(denom.str(), path + fontName, textColor, 16, ren);
+
 /* Now, to prepare for the main game loop, we need to set structures
  * to keep track of time. */
     struct timespec elapsed = {0, 0};
@@ -179,7 +175,7 @@ int main (int argc, char** argv) {
         /* no-op*/
     } else {
         printf("Problem getting the wall time. ERR.\n");
-	return -1;
+        return -1;
     }
 
 /* ******   MAIN GAME LOOP BELOW   ****** */
@@ -292,8 +288,8 @@ int main (int argc, char** argv) {
  * This is a function of how much time has passed...*/
 /*        long lastTime = elapsed.tv_nsec;
         res = clock_getres(CLOCK_REALTIME, &elapsed);*/
-/*	long dur = (elapsed.tv_nsec - lastTime)*//* / 1000000*//*;*/
-/*	printf("Last time per frame: %lu\n", dur);
+/*        long dur = (elapsed.tv_nsec - lastTime)*//* / 1000000*//*;*/
+/*        printf("Last time per frame: %lu\n", dur);
         SDL_RenderClear(ren);*/
 
         /* Now, to render all the proper textures of each entity.*/
@@ -303,6 +299,13 @@ int main (int argc, char** argv) {
             ctr_adjusted %= 5;
             printf("Just healed another 10 HP!\n");
             player_data.gainHP (10);
+
+        /* Now update the pointer to the HP_NUMERATOR SDL_Texture.*/
+        /* To do this, first delete the texture: */
+            SDL_DestroyTexture(hp_num);
+            numer.str(std::string());
+            numer << player_data.getHP();
+            hp_num = renderText(numer.str(), path + fontName, textColor, 16, ren);
 
             int nextInd = (ctr / 10000) - 1;
             if (nextInd < 8) {
@@ -325,7 +328,7 @@ int main (int argc, char** argv) {
             }
         }
 
-        renderHeap (master_heap, ctr_adjusted, ren, &h_prime, player_data.getHP(), player_data.getMaxHP());
+        renderHeap (master_heap, ctr_adjusted, ren, &h_prime, player_data.getHP(), player_data.getMaxHP(), hp_num, hp_denom);
         if (show_inventory) {
             displayInventory(ren, inventory);
         }
@@ -678,7 +681,8 @@ void deleteHeap (heap *tbd) {
  *     rend must be a non-NULL Renderer pointer.
  * Postcondition: will render all entities in the heap. */
 void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend,
-                 heap **used, unsigned int hp, unsigned int max) {
+                 heap **used, unsigned int hp, unsigned int max,
+                 SDL_Texture *hp_num, SDL_Texture *hp_denom) {
     /* Remember: we want to preserve the heap invariant */
     /* Also: after removing nodes from the first heap "h",
      * add them into the "used" heap, which will be used 
@@ -705,15 +709,6 @@ void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend,
              * We want to process it in a unique way. */
             /* Specificaally, we fill a rectangle at the appropriate
              * width to model the palyer's current HP ratio. */
-            std::string path = "../../res/";
-            std::string fontName = "fonts/Ubuntu-M_font.ttf";
-            SDL_Color color = {0, 0, 0, 255};
-
-            std::stringstream numer, denom;
-            numer << hp;
-            denom << max;
-            SDL_Texture *hp_num = renderText(numer.str(), path + fontName, color, 16, rend);
-            SDL_Texture *hp_denom = renderText(denom.str(), path + fontName, color, 16, rend);
             int start_bars_ind = (x_pos+125);
             int width, height, upper_bound;
             float factor = (float) ((float) (hp) / max);
