@@ -1,4 +1,4 @@
-/* Vincent Cozzo                         */
+/* vincent cozzo                         */
 /* A test for generalizing the movement capabilities,                */
 /* With the eventual goal of rendering any general background        */
 /*  engine_heap.cpp : the heap implementation                        */
@@ -171,6 +171,17 @@ int main (int argc, char** argv) {
 /*    float scale = 2.0f;*/
     unsigned int ctr = 1;
 
+/* Now, to prepare for the main game loop, we need to set structures
+ * to keep track of time. */
+    struct timespec elapsed = {0, 0};
+    int res = clock_getres(CLOCK_REALTIME, &elapsed);
+    if (res == 0) {
+        /* no-op*/
+    } else {
+        printf("Problem getting the wall time. ERR.\n");
+	return -1;
+    }
+
 /* ******   MAIN GAME LOOP BELOW   ****** */
 
     while (open) {
@@ -196,8 +207,8 @@ int main (int argc, char** argv) {
                     if (map_matrix[y_coord][x_coord - speed] == 0) {
                         player_graphical->x_comp -= speed;
                     } else {
-                        printf("map_matrix[y_coord][x_coord-speed] = map_m"\
-                               "atrix[%d][%d]=1\n", y_coord, x_coord-speed);
+/*                        printf("map_matrix[y_coord][x_coord-speed] = map_m"\
+                               "atrix[%d][%d]=1\n", y_coord, x_coord-speed);*/
                     }
                 } else if (ev.key.keysym.sym == SDLK_w) {
                     if (map_matrix[y_coord - speed][x_coord] == 0) {
@@ -208,10 +219,10 @@ int main (int argc, char** argv) {
                               (map_matrix[y_coord + speed][x_coord] == 0)) {
                         player_graphical->y_comp += speed;
                     } else if (y_coord + speed >= WIN_HEIGHT) {
-                        printf("%d + %d >= WIN_HEIGHT (365)\n",
-                                                      y_coord, speed);
+/*                        printf("%d + %d >= WIN_HEIGHT (365)\n",
+                                                      y_coord, speed);*/
                     } else {
-                        printf("map_matrix[y_coord+speed][x_coord] = map_matrix[%d][%d]=1\n", y_coord+speed, x_coord);
+/*                        printf("map_matrix[y_coord+speed][x_coord] = map_matrix[%d][%d]=1\n", y_coord+speed, x_coord);*/
                     }
                 } else if ((ev.key.keysym.sym == SDLK_x) || (ev.key.keysym.sym == SDLK_q)) {
                 /* Allow exit on X key or Q key: */
@@ -253,6 +264,8 @@ int main (int argc, char** argv) {
                     /* Finally, load the new background. */
                     showNewBackground(bg_num, master_heap, ren, &mapNotReadOnly, &bgTex);
                     player_graphical->x_comp = WIN_WIDTH-70;
+                    x_coord = (player_graphical->x_comp 
+                                           + ((/*scale* */playerWidth)/2));
                 } 
                 if (x_coord > WIN_WIDTH) {
                     int numEntities=(master_heap->size), deleteInd=numEntities-1;
@@ -268,11 +281,20 @@ int main (int argc, char** argv) {
                     /* Finally, load the new background. */
                     showNewBackground(bg_num, master_heap, ren, &mapNotReadOnly, &bgTex);
                     player_graphical->x_comp = 40;
+                    x_coord = (player_graphical->x_comp 
+                                           + ((/*scale* */playerWidth)/2));
                 }
                 player_graphical->x_comp %= WIN_WIDTH;
             }
         }
-        SDL_RenderClear(ren);
+/* So after polling for events, we can use a time-step numerical method to 
+ * calculate any changes in the position of entities on the screen.
+ * This is a function of how much time has passed...*/
+/*        long lastTime = elapsed.tv_nsec;
+        res = clock_getres(CLOCK_REALTIME, &elapsed);*/
+/*	long dur = (elapsed.tv_nsec - lastTime)*//* / 1000000*//*;*/
+/*	printf("Last time per frame: %lu\n", dur);
+        SDL_RenderClear(ren);*/
 
         /* Now, to render all the proper textures of each entity.*/
         unsigned int ctr_adjusted = ctr % 5;
@@ -683,6 +705,15 @@ void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend,
              * We want to process it in a unique way. */
             /* Specificaally, we fill a rectangle at the appropriate
              * width to model the palyer's current HP ratio. */
+            std::string path = "../../res/";
+            std::string fontName = "fonts/Ubuntu-M_font.ttf";
+            SDL_Color color = {0, 0, 0, 255};
+
+            std::stringstream numer, denom;
+            numer << hp;
+            denom << max;
+            SDL_Texture *hp_num = renderText(numer.str(), path + fontName, color, 16, rend);
+            SDL_Texture *hp_denom = renderText(denom.str(), path + fontName, color, 16, rend);
             int start_bars_ind = (x_pos+125);
             int width, height, upper_bound;
             float factor = (float) ((float) (hp) / max);
@@ -696,6 +727,8 @@ void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend,
             filled.h = height;
             SDL_RenderFillRect(rend, &filled);
             SDL_RenderDrawRect(rend, &filled);
+            renderTexture(hp_num, rend, 50, 5);
+            renderTexture(hp_denom, rend, 88, 5);
         }
         deleteEntity (h, nextRoot);
         addToHeap (used, nextRoot);
