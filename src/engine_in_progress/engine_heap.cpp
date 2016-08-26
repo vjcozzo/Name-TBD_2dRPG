@@ -158,14 +158,13 @@ int main (int argc, char** argv) {
 /*    float scale = 2.0f;*/
     unsigned int ctr = 1;
 
-    std::string fontName = "fonts/Ubuntu-M_font.ttf";
-    SDL_Color textColor = {0, 0, 0, 255};
-
+    std::string fontName = "fonts/FreeSerifBold.ttf";
+    SDL_Color textColor = {246, 142, 86, 255};
     std::stringstream numer, denom;
     numer << player_data.getHP();
     denom << player_data.getMaxHP();
-    SDL_Texture *hp_num = renderText(numer.str(), path + fontName, textColor, 16, ren);
-    SDL_Texture *hp_denom = renderText(denom.str(), path + fontName, textColor, 16, ren);
+    SDL_Texture *hp_num = renderText(numer.str(), path + fontName, textColor, 18, ren);
+    SDL_Texture *hp_denom = renderText(denom.str(), path + fontName, textColor, 18, ren);
 
 /* Now, to prepare for the main game loop, we need to set structures
  * to keep track of time. */
@@ -305,7 +304,7 @@ int main (int argc, char** argv) {
             SDL_DestroyTexture(hp_num);
             numer.str(std::string());
             numer << player_data.getHP();
-            hp_num = renderText(numer.str(), path + fontName, textColor, 16, ren);
+            hp_num = renderText(numer.str(), path + fontName, textColor, 18, ren);
 
             int nextInd = (ctr / 10000) - 1;
             if (nextInd < 8) {
@@ -722,8 +721,8 @@ void renderHeap (heap *h, unsigned int count, SDL_Renderer *rend,
             filled.h = height;
             SDL_RenderFillRect(rend, &filled);
             SDL_RenderDrawRect(rend, &filled);
-            renderTexture(hp_num, rend, 50, 5);
-            renderTexture(hp_denom, rend, 88, 5);
+            renderTexture(hp_num, rend, 48, 4);
+            renderTexture(hp_denom, rend, 86, 4);
         }
         deleteEntity (h, nextRoot);
         addToHeap (used, nextRoot);
