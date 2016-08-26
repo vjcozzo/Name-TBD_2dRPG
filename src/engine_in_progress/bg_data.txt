@@ -1,3 +1,3 @@
 plains_fort.png, 255, 300, 254
-woods_bg.png, 260, 280, 254
-woods_bg_2.png, 30, 280, 254
+woods_bg.png, 260, 280, 284
+woods_bg_2.png, 30, 280, 284

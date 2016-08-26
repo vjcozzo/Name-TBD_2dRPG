@@ -1,4 +1,4 @@
 plains_fort.png, 0, 0, 9000, 9000, 1, 1
-building.png, 367, 79, 370, 80, 1, 11
+building.png, 357, 69, 360, 70, 1, 11
 health_base_bg_white.png, 5, 5, 0, 0, 1, 2
 tent_small_blue.png, 231, 263, 240, 264, 1, 23
